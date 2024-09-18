@@ -64,4 +64,4 @@ def client(server_ip, port):
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    client("192.168.0.140", 9002)  # 서버 주소와 포트
+    client("192.168.0.13", 4040)  # 서버 주소와 포트
