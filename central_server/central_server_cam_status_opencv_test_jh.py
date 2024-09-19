@@ -1,5 +1,7 @@
 import cv2, socket, struct, time, sys
 import numpy as np
+from ultralytics import YOLO
+import pandas
 
 def abs_sobel_thresh(img, orient='x', thresh_min=25, thresh_max=255):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(np.float32)
@@ -22,9 +24,9 @@ def abs_sobel_thresh(img, orient='x', thresh_min=25, thresh_max=255):
     return binary_output
 
 # central server ip, port
-server_ip = "192.168.0.50"
+server_ip = "192.168.0.134"
 rpi_server_port = 3141
-obs_server_port = 4040
+# obs_server_port = 4040
 
 # 카메라 매트릭스과 왜곡 계수 (예시 값)
 mtx = np.array([[1.15753008e+03, 0.00000000e+00, 6.75382833e+02],
@@ -36,17 +38,19 @@ dist = np.array([[-0.26706898,  0.10305542, -0.00088013,  0.00080643, -0.1957402
 rpi_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 rpi_server_socket.bind((server_ip, rpi_server_port))
 rpi_server_socket.listen(1)
-obs_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-obs_server_socket.bind((server_ip, obs_server_port))
-obs_server_socket.listen(1)
+# obs_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# obs_server_socket.bind((server_ip, obs_server_port))
+# obs_server_socket.listen(1)
 print(f"서버가 {server_ip} : {rpi_server_port}에서 대기 중입니다...")
-print(f"서버가 {server_ip} : {obs_server_port}에서 대기 중입니다...")
+# print(f"서버가 {server_ip} : {obs_server_port}에서 대기 중입니다...")
 
 # 클라이언트 연결 수립
 rpi_conn, addr = rpi_server_socket.accept()
 print(f"클라이언트 {addr}와 연결되었습니다.")
-obs_conn, addr = obs_server_socket.accept()
-print(f"클라이언트 {addr}와 연결되었습니다.")
+# obs_conn, addr = obs_server_socket.accept()
+# print(f"클라이언트 {addr}와 연결되었습니다.")
+
+model = YOLO("/home/jh/project/deeplearning_project/best.pt")
 
 try:
     while True:
@@ -235,18 +239,27 @@ try:
                 print(f"send motor_command {direction}, {motor_value}")
 
                 # === Obstacle 서버로 영상 전송
-                encoded_cal_frame = cv2.imencode('.jpg', undist_frame)[1].tobytes()
-                cal_frame_size = len(frame_data)
-                head = b'SF'
-                obs_conn.sendall(head + struct.pack(">L", cal_frame_size) + encoded_cal_frame + b'\n')
+                # encoded_cal_frame = cv2.imencode('.jpg', undist_frame)[1].tobytes()
+                # cal_frame_size = len(frame_data)
+                # head = b'SF'
+                # obs_conn.sendall(head + struct.pack(">L", cal_frame_size) + encoded_cal_frame + b'\n')
 
                 # === 화면에 표시 (디버그용)
                 lane_overlay = np.zeros_like(undist_frame)
                 lane_overlay[preprocessImage == 255] = [0, 0, 255]
                 combined = cv2.addWeighted(undist_frame, 0.7, lane_overlay, 1.0, 0)
 
+                results = model(combined)
+                annotated_frame = results.render()[0]
 
-                cv2.imshow("Lane Detection", combined)
+                # detections = []
+                # for _, row in results.pandas().xyxy[0].iterrows():
+                    # detections = {
+                        # 'class' : int
+                    # }
+
+
+                cv2.imshow("Lane Detection", annotated_frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
 
