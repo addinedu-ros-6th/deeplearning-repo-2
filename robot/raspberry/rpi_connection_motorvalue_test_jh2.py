@@ -22,10 +22,6 @@ def connect_to_server(ip, port):
     return sock
 
 def send_frame(sock, cam):
-    if not cam.isOpened():
-        print("카메라를 열 수 없습니다.")
-        return
-
     while True:
         try:
             # 프레임 캡처
@@ -38,12 +34,10 @@ def send_frame(sock, cam):
                 header = b'SF'
                 sock.sendall(header + struct.pack(">L", frame_size) + frame_data + b'\n')
                 print(f"{sock.getpeername()}로 크기 {frame_size}의 프레임을 전송했습니다.")
-            else:
-                print("프레임 캡처 실패 또는 소켓이 연결되지 않았습니다.")
         except Exception as e:
             print(f"프레임 캡처 또는 전송 오류: {e}")
-            break
-        time.sleep(1/30)  # 프레임 레이트 제한
+        # 프레임 레이트 제한
+        # time.sleep(1/30)
 
 def send_status(sock_central):
     while True:
@@ -53,14 +47,13 @@ def send_status(sock_central):
             vid0_avail = os.path.exists('/dev/video0')
             vid1_avail = os.path.exists('/dev/video1')
             status = 1 if arduino_avail and vid0_avail and vid1_avail else 0
-        
+
             status_packet = b'CS' + status.to_bytes(1, byteorder="big")
             sock_central.sendall(status_packet + b'\n')
             print(f"상태 전송: CS {status}")
         except Exception as e:
             print(f"상태 전송 오류: {e}")
-            break
-        time.sleep(10)  # 10초마다 상태 전송
+        time.sleep(5)  # 5초마다 상태 전송
 
 def recieve_motor(sock_central, ser):
     buffer = b''
@@ -70,31 +63,33 @@ def recieve_motor(sock_central, ser):
             if not data:
                 print("서버로부터 연결이 종료되었습니다.")
                 break
-
             buffer += data
-
             while b'\n' in buffer:
-                line, buffer = buffer.split(b'\n', 1)
-                if not line:
+                message, buffer = buffer.split(b'\n', 1)
+                if not message:
                     continue
-                start = line[0]
-                if start == 10:
-                    if len(line) >= 4:
-                        direction = line[1]
-                        left_value = line[2]
-                        right_value = line[3]
+                # 메시지 형식: 시작 바이트 + 방향 + 왼쪽 값 + 오른쪽 값
+                if len(message) >= 4:
+                    start_byte = message[0]
+                    if start_byte == 10:  # 시작 바이트가 10인지 확인
+                        direction = message[1]
+                        left_value = message[2]
+                        right_value = message[3]
+
                         print(f"방향: {direction}, 모터 값: {left_value}, {right_value}")
-                        cmd = line[1:]
+
+                        cmd = message[1:4]
                         ser.write(cmd)
                         print(f"시리얼로 전송: {cmd}")
+
+                        # 아두이노로부터 응답 읽기
                         if ser.in_waiting > 0:
                             ar_msg = ser.read(ser.in_waiting)
-                            if ar_msg:
-                                print(f"시리얼로부터 수신: {ar_msg}")
+                            print(f"시리얼로부터 수신: {ar_msg}")
                     else:
-                        print("불완전한 모터 명령 수신")
+                        print(f"알 수 없는 시작 바이트: {start_byte}")
                 else:
-                    print(f"알 수 없는 시작 바이트: {start}")
+                    print("불완전한 모터 명령 수신")
         except Exception as e:
             print(f"모터 명령 수신 오류: {e}")
             break
@@ -102,9 +97,6 @@ def recieve_motor(sock_central, ser):
 def main():
     # 카메라 초기화
     cam0 = cv2.VideoCapture(0)
-    if not cam0.isOpened():
-        print("카메라 0을 열 수 없습니다.")
-        return
 
     # 중앙 서버에 연결
     central_sock = connect_to_server(CENTRAL_SERVER_IP, CENTRAL_SERVER_PORT)
@@ -114,6 +106,7 @@ def main():
     # 아두이노 연결
     try:
         ser = serial.Serial('/dev/ttyArduino', 9600)
+        print("아두이노에 연결되었습니다.")
     except serial.SerialException as e:
         print(f"시리얼 포트 열기 오류: {e}")
         ser = None
@@ -140,6 +133,7 @@ def main():
     except KeyboardInterrupt:
         print("사용자에 의해 중단되었습니다.")
     finally:
+        # 리소스 정리
         cam0.release()
         if central_sock:
             central_sock.close()
@@ -148,5 +142,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
