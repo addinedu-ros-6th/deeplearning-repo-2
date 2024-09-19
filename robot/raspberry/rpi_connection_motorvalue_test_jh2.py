@@ -68,17 +68,16 @@ def recieve_motor(sock_central, ser):
                 message, buffer = buffer.split(b'\n', 1)
                 if not message:
                     continue
-                # 메시지 형식: 시작 바이트 + 방향 + 왼쪽 값 + 오른쪽 값
-                if len(message) >= 4:
+                # 메시지 형식: 시작 바이트 + 왼쪽 값 + 오른쪽 값
+                if len(message) >= 3:
                     start_byte = message[0]
                     if start_byte == 10:  # 시작 바이트가 10인지 확인
-                        direction = message[1]
-                        left_value = message[2]
-                        right_value = message[3]
+                        left_value = message[1]
+                        right_value = message[2]
 
-                        print(f"방향: {direction}, 모터 값: {left_value}, {right_value}")
+                        print(f"모터 값: {left_value}, {right_value}")
 
-                        cmd = message[1:4]
+                        cmd = message[1:3]
                         ser.write(cmd)
                         print(f"시리얼로 전송: {cmd}")
 
