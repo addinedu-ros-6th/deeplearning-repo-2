@@ -37,7 +37,7 @@ void setup()
 
 void loop()
 {
-    if (Serial.available() >= 3) // 최소 3바이트가 도착할 때까지 대기
+    if (Serial.available() >= 0) // 최소 3바이트가 도착할 때까지 대기
     {
         byte packet[3];
         Serial.readBytes(packet, 3); // 패킷 전체를 한 번에 읽음
