@@ -18,7 +18,7 @@ import threading
 import serial
 
 # Central server details
-CENTRAL_SERVER_IP = '192.168.0.13'  # Central IP
+CENTRAL_SERVER_IP = '192.168.0.147'  # Central IP
 CENTRAL_SERVER_PORT = 3141  # Central port
 
 # Pollination server details (if needed)
@@ -129,7 +129,7 @@ def receive_control_cmds(sock, ser):
 def main():
     # Initialize cameras
     cam0 = cv2.VideoCapture(0)  # fyi, the index number changes to 2 sometimes
-    cam1 = cv2.VideoCapture(1)  # fyi, the index number changes to 0 sometimes
+#    cam1 = cv2.VideoCapture(1)  # fyi, the index number changes to 0 sometimes
 
     # Connect to central server
     central_sock = connect_to_server(CENTRAL_SERVER_IP, CENTRAL_SERVER_PORT)
@@ -137,9 +137,9 @@ def main():
         return  # Exit if connection fails
 
     # Connect to pollination server
-    pollination_sock = connect_to_server(POLLINATION_SERVER_IP, POLLINATION_SERVER_PORT)
-    if not pollination_sock:
-        return  # Exit if connection fails
+ #   pollination_sock = connect_to_server(POLLINATION_SERVER_IP, POLLINATION_SERVER_PORT)
+  #  if not pollination_sock:
+   #     return  # Exit if connection fails
 
     # Initialize serial connection to Arduino for precise motor control
     try:
@@ -150,24 +150,24 @@ def main():
 
     # Create threads
     frame0_thread = threading.Thread(target=send_frame, args=(central_sock, cam0))
-    frame1_thread = threading.Thread(target=send_frame, args=(pollination_sock, cam1))
+  #  frame1_thread = threading.Thread(target=send_frame, args=(pollination_sock, cam1))
     status_thread = threading.Thread(target=send_status, args=(central_sock,))
-    # motor_command_thread = threading.Thread(target=receive_motor_cmd, args=(central_sock, ser))
+    motor_command_thread = threading.Thread(target=receive_motor_cmd, args=(central_sock, ser))
     # control_command_thread = threading.Thread(target=receive_control_cmds, args=(central_sock, ser))
 
     # Start threads
     frame0_thread.start()
-    frame1_thread.start()
+   # frame1_thread.start()
     status_thread.start()
-    # motor_command_thread.start()
+    motor_command_thread.start()
     # control_command_thread.start()
 
     try:
         # Wait for threads to finish
         frame0_thread.join()
-        frame1_thread.join()
+    #    frame1_thread.join()
         status_thread.join()
-        # motor_command_thread.join()
+        motor_command_thread.join()
         # control_command_thread.join()
 
 
@@ -177,12 +177,12 @@ def main():
         
     finally:
         cam0.release()
-        cam1.release()
+     #   cam1.release()
         
         if central_sock:
             central_sock.close()
-        if pollination_sock:
-            pollination_sock.close()
+      #  if pollination_sock:
+       #     pollination_sock.close()
 
         if ser:
             ser.close()

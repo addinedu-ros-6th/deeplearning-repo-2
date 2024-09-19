@@ -4,12 +4,13 @@ import struct
 import os
 import threading
 import time
+import serial
 
 # status
 # before_status = 0
 
 # Central server details
-CENTRAL_SERVER_IP = "192.168.0.134"
+CENTRAL_SERVER_IP = "192.168.0.147"
 CENTRAL_SERVER_PORT = 3141
 
 # Pollination server details (if needed)
@@ -62,17 +63,33 @@ def send_status(sock_central):
             print(f"Error sending status: {e}")
         time.sleep(5)  # Send status every 10 seconds
 
-def recieve_motor(sock_central):
+def recieve_motor(sock_central, ser):
     while True:
         msg = b''
-        while len(msg) < 5:
-            msg += sock_central.recv(5)
+        while len(msg) < 4:
+            msg += sock_central.recv(4)
+            start = int.from_bytes(msg[:1], byteorder="big")
 
-        if msg.startswith(b'M') and msg.endswith(b'\n'):
-            direction = msg[1:2].decode('utf-8')
-            motor_value = int.from_bytes(msg[2:-1], byteorder="big")
+        if start == 10 and msg.endswith(b'\n'):
+            #direction = msg[1:2].decode('utf-8')
+            direction = start
+            left_value = int.from_bytes(msg[1:2], byteorder="big")
+            right_value = int.from_bytes(msg[2:3], byteorder="big")
 
-            print(f"direction : {direction}, motor value : {motor_value}")
+            print(f"direction : {direction}, motor value : {left_value}, {right_value}")
+
+            cmd = msg[1:]
+            ser.write(cmd)
+            print(f"{cmd}")
+
+            ar_msg = b''
+            if ser.read() is None:
+                continue
+            else:
+                ar_msg += ser.read()
+
+            if ar_msg != b'':
+                print(f"{ar_msg}")
 
 def main():
     # Initialize cameras
@@ -89,11 +106,13 @@ def main():
     # if not pollination_sock:
     #     return
 
+    # connect arduino
+    ser = serial.Serial('/dev/ttyArduino', 9600)
     # Create threads
     frame0_thread = threading.Thread(target = send_frame, args = (central_sock, cam0))
     # frame1_thread = threading.Thread(target = send_frame, args = (pollination_sock, cam1))
     status_thread = threading.Thread(target = send_status, args = (central_sock,))
-    motor_command_thread = threading.Thread(target= recieve_motor, args= (central_sock,))
+    motor_command_thread = threading.Thread(target= recieve_motor, args= (central_sock, ser))
 
     # Start threads
     frame0_thread.start()

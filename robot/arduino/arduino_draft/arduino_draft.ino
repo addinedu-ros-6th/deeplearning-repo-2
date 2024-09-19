@@ -11,6 +11,15 @@
 int leftSpeed = 0;  // 왼쪽 모터 속도 저장
 int rightSpeed = 0;  // 오른쪽 모터 속도 저장
 
+void sendMotorData(int leftSpeed, int rightSpeed)
+{
+  Serial.print("L:");
+  Serial.print(leftSpeed);
+  Serial.print("R:");
+  Serial.print(rightSpeed);
+  Serial.print("\n");
+}
+
 void setup() 
 {
     pinMode(L_MOTOR_IN1, OUTPUT);
@@ -34,21 +43,20 @@ void loop()
     
     if (packet.length() >= 3) // 최소 3바이트 이상이어야 유효한 패킷
     {
-      int command = packet.substring(0, 1).toInt();  // 1바이트 명령 ID 수신 (10)
-      leftSpeed = packet.substring(1, 2).toInt();  // 1바이트 왼쪽 속도 수신 (0~255)
-      rightSpeed = packet.substring(2, 3).toInt();  // 1바이트 오른쪽 속도 수신 (0~255)
+      leftSpeed = packet[0];  // 1바이트 왼쪽 속도 수신 (0~255)
+      rightSpeed = packet[1];  // 1바이트 오른쪽 속도 수신 (0~255)
 
-      if (command == 10) 
-      {  
-        // 명령 ID가 10인지 확인 후 모터 제어
-        digitalWrite(L_MOTOR_IN1, LOW);
-        digitalWrite(L_MOTOR_IN2, HIGH);
-        analogWrite(L_MOTOR_PWM, leftSpeed);  // 왼쪽 모터 설정
+       
+      // 명령 ID가 10인지 확인 후 모터 제어
+      digitalWrite(L_MOTOR_IN1, LOW);
+      digitalWrite(L_MOTOR_IN2, HIGH);
+      analogWrite(L_MOTOR_PWM, leftSpeed);  // 왼쪽 모터 설정
 
-        digitalWrite(R_MOTOR_IN1, HIGH);
-        digitalWrite(R_MOTOR_IN2, LOW);
-        analogWrite(R_MOTOR_PWM, rightSpeed);  // 오른쪽 모터 설정
-      } 
+      digitalWrite(R_MOTOR_IN1, HIGH);
+      digitalWrite(R_MOTOR_IN2, LOW);
+      analogWrite(R_MOTOR_PWM, rightSpeed);  // 오른쪽 모터 설정
+
+      sendMotorData(leftSpeed, rightSpeed);      
     }
   }
 }
