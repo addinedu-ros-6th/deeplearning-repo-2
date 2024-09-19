@@ -8,6 +8,9 @@
 
 #define MOTOR_STBY 9  // 모터 스탠바이 핀
 
+int leftSpeed = 0;  // 왼쪽 모터 속도 저장
+int rightSpeed = 0;  // 오른쪽 모터 속도 저장
+
 void setup() 
 {
     pinMode(L_MOTOR_IN1, OUTPUT);
@@ -31,10 +34,9 @@ void loop()
     
     if (packet.length() >= 3) // 최소 3바이트 이상이어야 유효한 패킷
     {
-      int command = input.substring(packet[0]).toInt();  // 1바이트 명령 ID 수신 (10)
-      int leftSpeed = input.substring(packet[1]).toInt();  // 1바이트 왼쪽 속도 수신 (0~255)
-      int rightSpeed = input.substring(packet[2]).toInt();  // 1바이트 오른쪽 속도 수신 (0~255)
-
+      int command = packet.substring(0, 1).toInt();  // 1바이트 명령 ID 수신 (10)
+      leftSpeed = packet.substring(1, 2).toInt();  // 1바이트 왼쪽 속도 수신 (0~255)
+      rightSpeed = packet.substring(2, 3).toInt();  // 1바이트 오른쪽 속도 수신 (0~255)
 
       if (command == 10) 
       {  
@@ -46,7 +48,20 @@ void loop()
         digitalWrite(R_MOTOR_IN1, HIGH);
         digitalWrite(R_MOTOR_IN2, LOW);
         analogWrite(R_MOTOR_PWM, rightSpeed);  // 오른쪽 모터 설정
+
+        // 모터 속도를 라즈베리파이로 전송
+        sendMotorData(leftSpeed, rightSpeed);
       } 
     }
   }
+}
+
+void sendMotorData(int leftSpeed, int rightSpeed)
+{
+    // 패킷 형태로 전송: "L:왼쪽속도 R:오른쪽속도\n"
+    Serial.print("L:");
+    Serial.print(leftSpeed);
+    Serial.print(" R:");
+    Serial.print(rightSpeed);
+    Serial.print("\n");  // 패킷 끝을 알리기 위해 개행문자 사용
 }
