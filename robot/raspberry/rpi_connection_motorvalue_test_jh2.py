@@ -55,37 +55,39 @@ def send_status(sock_central):
             print(f"상태 전송 오류: {e}")
         time.sleep(5)  # 5초마다 상태 전송
 
-def recieve_motor(sock_central, ser):
+def receive_motor(sock_central, ser):
     buffer = b''
     while True:
         try:
+            # 서버로부터 바이너리 데이터 수신
             data = sock_central.recv(1024)
             if not data:
                 print("서버로부터 연결이 종료되었습니다.")
                 break
             buffer += data
+
             while b'\n' in buffer:
                 message, buffer = buffer.split(b'\n', 1)
                 if not message:
                     continue
-                # 메시지 형식: 시작 바이트('M') + 왼쪽 값 + 오른쪽 값
+                # 메시지 형식: 시작 바이트 'M' + 왼쪽 값(1바이트) + 오른쪽 값(1바이트)
                 if len(message) >= 3:
                     start_byte = message[0]
-                    print(f"시작 바이트: {chr(start_byte)}")
                     if start_byte == ord('M'):
                         left_value = message[1]
                         right_value = message[2]
 
-                        print(f"모터 값: 왼쪽={left_value}, 오른쪽={right_value}")
+                        print(f"수신된 모터 값: 왼쪽={left_value}, 오른쪽={right_value}")
 
-                        cmd = message + b'\n'  # 전체 패킷에 '\n' 추가
-                        ser.write(cmd)
-                        print(f"시리얼로 전송: {cmd}")
+                        # 아두이노로 전송할 명령 생성 (쉼표 포함한 문자열)
+                        cmd = f'M{left_value},{right_value}\n'
+                        ser.write(cmd.encode('utf-8'))
+                        print(f"아두이노로 전송: {cmd}")
 
                         # 아두이노로부터 응답 읽기
                         if ser.in_waiting > 0:
-                            ar_msg = ser.read(ser.in_waiting)
-                            print(f"시리얼로부터 수신: {ar_msg}")
+                            ar_msg = ser.read(ser.in_waiting).decode('utf-8')
+                            print(f"아두이노 응답: {ar_msg}")
                     else:
                         print(f"알 수 없는 시작 바이트: {start_byte}")
                 else:
@@ -93,6 +95,8 @@ def recieve_motor(sock_central, ser):
         except Exception as e:
             print(f"모터 명령 수신 오류: {e}")
             break
+
+
 
 
 def main():
