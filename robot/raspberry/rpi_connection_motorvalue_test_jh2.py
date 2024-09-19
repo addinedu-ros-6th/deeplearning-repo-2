@@ -9,7 +9,7 @@ import time
 # before_status = 0
 
 # Central server details
-CENTRAL_SERVER_IP = "192.168.0.13"
+CENTRAL_SERVER_IP = "192.168.0.50"
 CENTRAL_SERVER_PORT = 3141
 
 # Pollination server details (if needed)

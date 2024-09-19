@@ -2,7 +2,7 @@ import cv2, socket, struct
 import numpy as np
 
 # pollination server ip, port
-server_ip = "192.168.0.13"
+server_ip = "192.168.0.50"
 server_port = 3141
 
 # 소켓 생성 및 바인딩

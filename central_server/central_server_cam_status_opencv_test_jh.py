@@ -22,7 +22,7 @@ def abs_sobel_thresh(img, orient='x', thresh_min=25, thresh_max=255):
     return binary_output
 
 # central server ip, port
-server_ip = "192.168.0.13"
+server_ip = "192.168.0.50"
 rpi_server_port = 3141
 obs_server_port = 4040
 

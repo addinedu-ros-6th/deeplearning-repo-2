@@ -5,7 +5,7 @@ import numpy as np
 import os
 from ultralytics import YOLO
 
-central_server_ip = "192.168.0.13"
+central_server_ip = "192.168.0.50"
 central_server_port = 4040
 
 central_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
