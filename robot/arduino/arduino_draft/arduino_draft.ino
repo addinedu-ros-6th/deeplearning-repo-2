@@ -39,13 +39,15 @@ void loop()
 {
     if (Serial.available() >= 3) // 최소 3바이트가 도착할 때까지 대기
     {
-        byte startByte = Serial.read();
+        byte packet[3];
+        Serial.readBytes(packet, 3); // 패킷 전체를 한 번에 읽음
 
-        if (startByte == 10)
+        if (packet[0] == 10) // 시작 바이트 확인
         {
-            leftSpeed = Serial.read();   // 왼쪽 모터 속도
-            rightSpeed = Serial.read();  // 오른쪽 모터 속도
+            leftSpeed = packet[1];   // 왼쪽 모터 속도
+            rightSpeed = packet[2];  // 오른쪽 모터 속도
 
+            // 모터 제어 로직
             // 왼쪽 모터 제어
             digitalWrite(L_MOTOR_IN1, LOW);
             digitalWrite(L_MOTOR_IN2, HIGH);
@@ -57,6 +59,11 @@ void loop()
             analogWrite(R_MOTOR_PWM, rightSpeed);
 
             sendMotorData(leftSpeed, rightSpeed);
+        }
+        else
+        {
+            // 시작 바이트가 올바르지 않은 경우 패킷 무시
+            Serial.println("올바르지 않은 시작 바이트입니다.");
         }
     }
 }
