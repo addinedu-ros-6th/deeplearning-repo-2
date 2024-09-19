@@ -39,8 +39,11 @@ void loop()
 {
     if (Serial.available() >= 0) // 최소 3바이트가 도착할 때까지 대기
     {
-        byte packet[3];
-        Serial.readBytes(packet, 3); // 패킷 전체를 한 번에 읽음
+      byte packet[4];
+      String input = Serial.readStringUntil('\n');  // 시리얼 입력 읽기
+      String command = input.packet[0];  // 첫 번째 문자는 명령어
+      int leftSpeed = input.packet[1];  // 왼쪽 속도 값 추출
+      int rightSpeed = input.packet[2];  // 오른쪽 속도 값 추출
 
         if (packet[0] == 'M') // 시작 바이트 확인
         {
