@@ -42,7 +42,7 @@ void loop()
         byte packet[3];
         Serial.readBytes(packet, 3); // 패킷 전체를 한 번에 읽음
 
-        if (packet[0] == 10) // 시작 바이트 확인
+        if (packet[0] == 'M') // 시작 바이트 확인
         {
             leftSpeed = packet[1];   // 왼쪽 모터 속도
             rightSpeed = packet[2];  // 오른쪽 모터 속도
