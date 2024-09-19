@@ -83,10 +83,8 @@ def recieve_motor(sock_central, ser):
             print(f"{cmd}")
 
             ar_msg = b''
-            if ser.read() is None:
-                continue
-            else:
-                ar_msg += ser.read()
+            if ser.in_waiting > 0:
+                ar_msg = ser.read(ser.in_waiting)
 
             if ar_msg != b'':
                 print(f"{ar_msg}")
