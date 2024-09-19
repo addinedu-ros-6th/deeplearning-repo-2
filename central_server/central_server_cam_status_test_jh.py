@@ -2,8 +2,8 @@ import cv2, socket, struct
 import numpy as np
 
 # pollination server ip, port
-server_ip = "192.168.0.42"
-server_port = 9003
+server_ip = "192.168.0.13"
+server_port = 3141
 
 # 소켓 생성 및 바인딩
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -17,15 +17,22 @@ print(f"클라이언트 {addr}와 연결되었습니다.")
 
 try:
     while True:
-        head = b''
+        header = b''
 
-        while len(head) < 6:
-            head += conn.recv(6 - len(head))
+        while len(header) < 2:
+            header += conn.recv(2 - len(header))
         
-        if head[:2] == b'SF':
-            frame_size = struct.unpack(">L", head[2:6])[0]
+        # frame data
+        if header == b'SF':
+            size_data = b''
+            while len(size_data) < 4:
+                packet = conn.recv(4 - len(size_data))
+                if not packet:
+                    break
+                size_data += packet
+            frame_size = struct.unpack(">L", size_data)[0]
+            
             frame_data = b''
-
             while len(frame_data) < frame_size:
                 packet = conn.recv(frame_size - len(frame_data))
                 if not packet:
@@ -42,6 +49,23 @@ try:
                     break
             else:
                 print("Error: Unable to decode frame")
+        
+        # status data
+        elif header == b'CS':
+            status_data = b''
+            while len(status_data) < 1:
+                packet = conn.recv(1 - len(status_data))
+                if not packet:
+                    break
+                status_data += packet
+            
+            conn.recv(1)
+
+            status = int.from_bytes(status_data, byteorder="big")
+            if status == 1:
+                print("status:", status)
+            else:
+                print("status", status)
 
 except Exception as e:
     print(f"Error receiving or displaying frame: {e}")

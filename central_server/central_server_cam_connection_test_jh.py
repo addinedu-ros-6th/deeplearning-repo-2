@@ -76,29 +76,6 @@ def handle_client(conn):
     except Exception as e:
         print(f"Error handling client: {e}")
 
-# def main(server_ip, server_port):
-#     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#     server_sock.bind((server_ip, server_port))
-#     server_sock.listen(1)
-
-#     print(f"Server listening on {server_ip}:{server_port}. Waiting for client")
-
-#     conn, addr = server_sock.accept()
-#     print(f"Connection from {addr}")
-
-#     client_thread = threading.Thread(target=handle_client, args=(conn,))
-#     client_thread.start()
-
-#     motor_cmd_thread = threading.Thread(target=send_motor_cmd, args=(conn,))
-#     motor_cmd_thread.start()
-
-#     client_thread.join()
-#     motor_cmd_thread.join()
-
-#     conn.close()
-#     server_sock.close()
-#     cv2.destroyAllWindows()
-
 if __name__ == '__main__':
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.bind(('192.168.0.13', 3141))
