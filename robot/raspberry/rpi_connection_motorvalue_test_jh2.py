@@ -68,17 +68,17 @@ def recieve_motor(sock_central, ser):
                 message, buffer = buffer.split(b'\n', 1)
                 if not message:
                     continue
-                # 메시지 형식: 시작 바이트 + 왼쪽 값 + 오른쪽 값
+                # 메시지 형식: 시작 바이트('M') + 왼쪽 값 + 오른쪽 값
                 if len(message) >= 3:
-                    start_byte = int.from_bytes(message[:1], byteorder="big")
-                    print(start_byte)
+                    start_byte = message[0]
+                    print(f"시작 바이트: {chr(start_byte)}")
                     if start_byte == ord('M'):
                         left_value = message[1]
                         right_value = message[2]
 
-                        print(f"모터 값: {left_value}, {right_value}")
+                        print(f"모터 값: 왼쪽={left_value}, 오른쪽={right_value}")
 
-                        cmd = message[1:3]
+                        cmd = message + b'\n'  # 전체 패킷에 '\n' 추가
                         ser.write(cmd)
                         print(f"시리얼로 전송: {cmd}")
 
@@ -93,6 +93,7 @@ def recieve_motor(sock_central, ser):
         except Exception as e:
             print(f"모터 명령 수신 오류: {e}")
             break
+
 
 def main():
 
