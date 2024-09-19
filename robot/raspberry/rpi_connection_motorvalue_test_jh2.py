@@ -72,7 +72,7 @@ def recieve_motor(sock_central, ser):
                 if len(message) >= 3:
                     start_byte = int.from_bytes(message[:1], byteorder="big")
                     print(start_byte)
-                    if start_byte == 10:  # 시작 바이트가 10인지 확인
+                    if start_byte == ord('M'):
                         left_value = message[1]
                         right_value = message[2]
 
