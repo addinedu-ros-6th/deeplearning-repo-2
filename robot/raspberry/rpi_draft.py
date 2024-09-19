@@ -73,20 +73,19 @@ def send_frame(sock, cam):
 def receive_motor_cmd(sock, ser):
     while True:
         try:
-            # Receive command ID (2 bytes) + left speed (2 bytes) + right speed (2 bytes)
-            data = sock.recv(7)
+            # Receive command ID (1 byte) + left speed (1 byte) + right speed (1 byte) + newline (1 byte)
+            data = sock.recv(4)
             if data.endswith(b'\n'):
-                data = data.strip()
-                if len(data) == 6 and data.startswith(b'M'): #as the command id will be MR, ML, MF, MS
-                    # Unpack the data
-                    command_id = data[:2].decode('utf-8')
-                    left_speed = struct.unpack('h', data[2:4])[0]
-                    right_speed = struct.unpack('h', data[4:6])[0]
+                data = data.strip()  # '\n' 제거
+                if len(data) == 3 and data[0] == 10:  # Command ID가 10인지 확인
+                    # left speed (1 byte) + right speed (1 byte)
+                    left_speed = data[1]  # 1바이트 정수로 해석
+                    right_speed = data[2]  # 1바이트 정수로 해석
 
-                    print(f"Received command: {command_id}, left speed: {left_speed}, right speed: {right_speed}")
+                    print(f"Received left speed: {left_speed}, right speed: {right_speed}")
 
-                    # Format the command for the Arduino
-                    cmd = f'{command_id}{left_speed},{right_speed}\n'.encode()
+                    # Arduino에 보낼 명령어 형식
+                    cmd = f'10{left_speed},{right_speed}\n'.encode()
                     ser.write(cmd)
 
         except Exception as e:
