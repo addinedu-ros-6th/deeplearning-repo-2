@@ -8,6 +8,9 @@
 
 #define MOTOR_STBY 9  // 모터 스탠바이 핀
 
+int leftSpeed = 0;  // 왼쪽 모터 속도 저장
+int rightSpeed = 0;  // 오른쪽 모터 속도 저장
+
 void setup() 
 {
     pinMode(L_MOTOR_IN1, OUTPUT);
@@ -31,9 +34,9 @@ void loop()
     
     if (packet.length() >= 3) // 최소 3바이트 이상이어야 유효한 패킷
     {
-      int command = packet[0];  // 1바이트 명령 ID 수신 (10)
-      int leftSpeed = packet[1];  // 1바이트 왼쪽 속도 수신 (0~255)
-      int rightSpeed = packet[2];  // 1바이트 오른쪽 속도 수신 (0~255)
+      int command = packet.substring(0, 1).toInt();  // 1바이트 명령 ID 수신 (10)
+      leftSpeed = packet.substring(1, 2).toInt();  // 1바이트 왼쪽 속도 수신 (0~255)
+      rightSpeed = packet.substring(2, 3).toInt();  // 1바이트 오른쪽 속도 수신 (0~255)
 
       if (command == 10) 
       {  
