@@ -31,9 +31,10 @@ void loop()
     
     if (packet.length() >= 3) // 최소 3바이트 이상이어야 유효한 패킷
     {
-      int command = packet[0];  // 1바이트 명령 ID 수신 (10)
-      int leftSpeed = packet[1];  // 1바이트 왼쪽 속도 수신 (0~255)
-      int rightSpeed = packet[2];  // 1바이트 오른쪽 속도 수신 (0~255)
+      int command = input.substring(packet[0]).toInt();  // 1바이트 명령 ID 수신 (10)
+      int leftSpeed = input.substring(packet[1]).toInt();  // 1바이트 왼쪽 속도 수신 (0~255)
+      int rightSpeed = input.substring(packet[2]).toInt();  // 1바이트 오른쪽 속도 수신 (0~255)
+
 
       if (command == 10) 
       {  
