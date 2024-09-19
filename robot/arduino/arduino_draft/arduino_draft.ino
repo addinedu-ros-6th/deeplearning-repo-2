@@ -8,7 +8,8 @@
 
 #define MOTOR_STBY 9  // 모터 스탠바이 핀
 
-void setup() {
+void setup() 
+{
     pinMode(L_MOTOR_IN1, OUTPUT);
     pinMode(L_MOTOR_IN2, OUTPUT);
     pinMode(L_MOTOR_PWM, OUTPUT);
