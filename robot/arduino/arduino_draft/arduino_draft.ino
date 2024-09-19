@@ -37,16 +37,16 @@ void setup()
 
 void loop()
 {
-    if (Serial.available() >= 4) // 총 4바이트 ('M', leftSpeed, rightSpeed, '\n')
+    if (Serial.available() > 0) 
     {
-      byte packet[4];
-      Serial.readBytes(packet, 4); // 패킷 전체를 한 번에 읽음
-
-      if (packet[0] == 'M' && packet[3] == '\n') // 시작 바이트와 종료 바이트 확인
+      String input = Serial.readStringUntil('\n');  // 시리얼 입력 읽기
+      String command = input.substring(0, 1);  // 첫 번째 문자는 명령어
+      int separatorIndex = input.indexOf(',');  // 쉼표 위치 찾기
+      int leftSpeed = input.substring(2, separatorIndex).toInt();  // 왼쪽 속도 값 추출
+      int rightSpeed = input.substring(separatorIndex + 1).toInt();  // 오른쪽 속도 값 추출
+      
+      if (command == 'M') // 시작 바이트와 종료 바이트 확인
       {
-        leftSpeed = packet[1];   // 왼쪽 모터 속도
-        rightSpeed = packet[2];  // 오른쪽 모터 속도
-
         // 모터 제어 로직
         // 왼쪽 모터 제어
         digitalWrite(L_MOTOR_IN1, LOW);
