@@ -85,7 +85,7 @@ def test_arduino(ser):
 
 def main():
     # 카메라 초기화 (필요한 경우)
-    # cam0 = cv2.VideoCapture(0)
+    cam0 = cv2.VideoCapture(0)
     # cam1 = cv2.VideoCapture(1)
 
     # 중앙 서버 연결
@@ -94,23 +94,23 @@ def main():
         return
 
     # 아두이노 연결
-    ser = serial.Serial('/dev/ttyACM0', 9600)
+    ser = serial.Serial('/dev/ttyArduino', 9600)
 
     # 아두이노 통신 테스트
     test_arduino(ser)
 
     # 스레드 생성
-    # frame0_thread = threading.Thread(target=send_frame, args=(central_sock, cam0))
+    frame0_thread = threading.Thread(target=send_frame, args=(central_sock, cam0))
     status_thread = threading.Thread(target=send_status, args=(central_sock,))
     motor_command_thread = threading.Thread(target=receive_motor, args=(central_sock, ser))
 
     # 스레드 시작
-    # frame0_thread.start()
+    frame0_thread.start()
     status_thread.start()
     motor_command_thread.start()
 
     try:
-        # frame0_thread.join()
+        frame0_thread.join()
         status_thread.join()
         motor_command_thread.join()
     except KeyboardInterrupt:
