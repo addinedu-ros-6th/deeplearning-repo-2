@@ -7,7 +7,7 @@ import time
 import serial
 
 # 중앙 서버 정보
-CENTRAL_SERVER_IP = "192.168.0.147"
+CENTRAL_SERVER_IP = "192.168.0.134"
 CENTRAL_SERVER_PORT = 3141
 
 def connect_to_server(ip, port):
