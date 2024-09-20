@@ -18,7 +18,7 @@ import threading
 import serial
 
 # Central server details
-CENTRAL_SERVER_IP = '192.168.0.147'  # Central IP
+CENTRAL_SERVER_IP = '192.168.0.134'  # Central IP
 CENTRAL_SERVER_PORT = 3141  # Central port
 
 # Pollination server details (if needed)

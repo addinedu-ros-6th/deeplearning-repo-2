@@ -7,7 +7,7 @@ import time
 import serial
 
 # 중앙 서버 정보
-CENTRAL_SERVER_IP = "192.168.0.147"
+CENTRAL_SERVER_IP = "192.168.0.134"
 CENTRAL_SERVER_PORT = 3141
 
 def connect_to_server(ip, port):
@@ -60,7 +60,7 @@ def receive_motor(sock_central, ser):
     while True:
         try:
             # 서버로부터 바이너리 데이터 수신
-            data = sock_central.recv(1024)
+            data = sock_central.recv(4)
             if not data:
                 print("서버로부터 연결이 종료되었습니다.")
                 break
@@ -72,22 +72,24 @@ def receive_motor(sock_central, ser):
                     continue
                 # 메시지 형식: 시작 바이트 'M' + 왼쪽 값(1바이트) + 오른쪽 값(1바이트)
                 if len(message) >= 3:
-                    start_byte = message[0]
-                    if start_byte == ord('M'):
-                        left_value = message[1]
-                        right_value = message[2]
+                    start_byte = int.from_bytes(message[:1], byteorder="big")
+                    if start_byte == 60:
+                        left_value = int.from_bytes(message[1:2], byteorder="big")
+                        right_value = int.from_bytes(message[2:3], byteorder="big")
 
                         print(f"수신된 모터 값: 왼쪽={left_value}, 오른쪽={right_value}")
 
                         # 아두이노로 전송할 명령 생성 (쉼표 포함한 문자열)
-                        cmd = f'M{left_value},{right_value}\n'
-                        ser.write(cmd.encode('utf-8'))
+                        cmd = f'M{left_value}{right_value}\n'.encode()
+                        ser.write(data)
+                        # ser.flush()  # Ensure the command is sent immediately
                         print(f"아두이노로 전송: {cmd}")
+#                        time.sleep(1)
 
                         # 아두이노로부터 응답 읽기
-                        if ser.in_waiting > 0:
-                            ar_msg = ser.read(ser.in_waiting).decode('utf-8')
-                            print(f"아두이노 응답: {ar_msg}")
+                       # if ser.in_waiting > 0:
+                       #     ar_msg = ser.read(ser.in_waiting).decode('utf-8')
+                       #     print(f"아두이노 응답: {ar_msg}")
                     else:
                         print(f"알 수 없는 시작 바이트: {start_byte}")
                 else:
@@ -112,32 +114,39 @@ def main():
 
     # 아두이노 연결
     try:
-        ser = serial.Serial('/dev/ttyArduino', 9600)
+        ser = serial.Serial(port='/dev/ttyArduino', baudrate=9600)
+#        ser.dtr = False
+#        time.sleep(1)
+#        ser.dtr = True
         print("아두이노에 연결되었습니다.")
+        # Flush input buffer
+        # ser.reset_input_buffer()
     except serial.SerialException as e:
         print(f"시리얼 포트 열기 오류: {e}")
-        ser = None
+        return
+        # ser = None
 
     # 스레드 생성
     frame0_thread = threading.Thread(target=send_frame, args=(central_sock, cam0))
     status_thread = threading.Thread(target=send_status, args=(central_sock,))
-    if ser:
-        motor_command_thread = threading.Thread(target=recieve_motor, args=(central_sock, ser))
-    else:
-        motor_command_thread = None
+    # if ser:
+    motor_command_thread = threading.Thread(target=receive_motor, args=(central_sock, ser))
+    # else:
+    #     motor_command_thread = None
 
     # 스레드 시작
     frame0_thread.start()
     status_thread.start()
-    if motor_command_thread:
-        motor_command_thread.start()
+    # if motor_command_thread:
+    motor_command_thread.start()
 
     try:
         frame0_thread.join()
         status_thread.join()
-        if motor_command_thread:
-            motor_command_thread.join()
+        # if motor_command_thread:
+        motor_command_thread.join()
     except KeyboardInterrupt:
+        ser.write(b'M0,0\n')
         print("사용자에 의해 중단되었습니다.")
     finally:
         # 리소스 정리
