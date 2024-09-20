@@ -22,8 +22,8 @@ CENTRAL_SERVER_IP = '192.168.0.147'  # Central IP
 CENTRAL_SERVER_PORT = 3141  # Central port
 
 # Pollination server details (if needed)
-POLLINATION_SERVER_IP = '192.168.0.42'  # Pollination IP
-POLLINATION_SERVER_PORT = 9003  # Pollination port
+#POLLINATION_SERVER_IP = '192.168.xxx.xxx'  # Pollination IP
+#POLLINATION_SERVER_PORT = 8888  # Pollination port
 
 def connect_to_server(ip, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -50,7 +50,7 @@ def send_status(sock_central):
             print(f"Sent status: CS {status}")
         except Exception as e:
             print(f"Error sending status: {e}")
-        time.sleep(1)  # Send status every 10 seconds
+        time.sleep(10)  # Send status every 10 seconds
 
 def send_frame(sock, cam):
     while True:
@@ -73,20 +73,23 @@ def send_frame(sock, cam):
 def receive_motor_cmd(sock, ser):
     while True:
         try:
-            # Receive command ID (2 bytes) + left speed (2 bytes) + right speed (2 bytes)
-            data = sock.recv(7)
+            # Receive command ID (1 byte) + left speed (1 byte) + right speed (1 byte) + newline (1 byte)
+            data = sock.recv(4)
+            print(f"{data[1:]}")
             if data.endswith(b'\n'):
-                data = data.strip()
-                if len(data) == 6 and data.startswith(b'M'): #as the command id will be MR, ML, MF, MS
-                    # Unpack the data
-                    command_id = data[:2].decode('utf-8')
-                    left_speed = struct.unpack('h', data[2:4])[0]
-                    right_speed = struct.unpack('h', data[4:6])[0]
+                #data = data.strip()  # '\n' 제거
+                start = int.from_bytes(data[:1], byteorder="big")
+                print(f"{start}")
+                if len(data) == 4 and start == 10:  # Command ID가 10인지 확인
+                    # left speed (1 byte) + right speed (1 byte)
+                    left_speed = int.from_bytes(data[1:2], byteorder="big")  # 1바이트 정수로 해석
+                    right_speed = int.from_bytes(data[2:3], byteorder="big")  # 1바이트 정수로 해석
 
-                    print(f"Received command: {command_id}, left speed: {left_speed}, right speed: {right_speed}")
+                    print(f"Received left speed: {left_speed}, right speed: {right_speed}")
 
-                    # Format the command for the Arduino
-                    cmd = f'{command_id}{left_speed},{right_speed}\n'.encode()
+                    # Arduino에 보낼 명령어 형식
+                    cmd = data[1:]
+                    print(f"{cmd}")
                     ser.write(cmd)
 
         except Exception as e:
@@ -129,7 +132,7 @@ def receive_control_cmds(sock, ser):
 def main():
     # Initialize cameras
     cam0 = cv2.VideoCapture(0)  # fyi, the index number changes to 2 sometimes
-#    cam1 = cv2.VideoCapture(1)  # fyi, the index number changes to 0 sometimes
+ #   cam1 = cv2.VideoCapture(1)  # fyi, the index number changes to 0 sometimes
 
     # Connect to central server
     central_sock = connect_to_server(CENTRAL_SERVER_IP, CENTRAL_SERVER_PORT)
@@ -137,9 +140,9 @@ def main():
         return  # Exit if connection fails
 
     # Connect to pollination server
- #   pollination_sock = connect_to_server(POLLINATION_SERVER_IP, POLLINATION_SERVER_PORT)
+  #  pollination_sock = connect_to_server(POLLINATION_SERVER_IP, POLLINATION_SERVER_PORT)
   #  if not pollination_sock:
-   #     return  # Exit if connection fails
+  #      return  # Exit if connection fails
 
     # Initialize serial connection to Arduino for precise motor control
     try:
@@ -153,39 +156,39 @@ def main():
   #  frame1_thread = threading.Thread(target=send_frame, args=(pollination_sock, cam1))
     status_thread = threading.Thread(target=send_status, args=(central_sock,))
     motor_command_thread = threading.Thread(target=receive_motor_cmd, args=(central_sock, ser))
-    # control_command_thread = threading.Thread(target=receive_control_cmds, args=(central_sock, ser))
+#    control_command_thread = threading.Thread(target=receive_control_cmds, args=(central_sock, ser))
 
     # Start threads
     frame0_thread.start()
-   # frame1_thread.start()
+  #  frame1_thread.start()
     status_thread.start()
     motor_command_thread.start()
-    # control_command_thread.start()
+ #   control_command_thread.start()
 
-    try:
+  #  try:
         # Wait for threads to finish
-        frame0_thread.join()
-    #    frame1_thread.join()
-        status_thread.join()
-        motor_command_thread.join()
-        # control_command_thread.join()
+   #     frame0_thread.join()
+  #      frame1_thread.join()
+   #     status_thread.join()
+   #     motor_command_thread.join()
+  #      control_command_thread.join()
 
 
-    except KeyboardInterrupt:
-        ser.write(b'MS\n')  # rmb to send 'MS' cmd to the arduino serial port
-        print("Interrupted by user")
+   # except KeyboardInterrupt:
+   #     ser.write(b'MS\n')  # rmb to send 'MS' cmd to the arduino serial port
+   #     print("Interrupted by user")
         
-    finally:
-        cam0.release()
-     #   cam1.release()
+   # finally:
+   #     cam0.release()
+   #     cam1.release()
         
-        if central_sock:
-            central_sock.close()
-      #  if pollination_sock:
-       #     pollination_sock.close()
+   #     if central_sock:
+   #         central_sock.close()
+   #     if pollination_sock:
+   #         pollination_sock.close()
 
-        if ser:
-            ser.close()
+   #     if ser:
+   #         ser.close()
 
 if __name__ == '__main__':
     main()
