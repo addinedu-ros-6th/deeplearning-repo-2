@@ -179,7 +179,7 @@ def handle_client(rpi_conn):
                 if frame is not None:
                     # 카메라 캘리브레이션 적용
                     undist_frame = cv2.undistort(frame, mtx, dist, None, mtx)
-
+ 
                     # 차선 검출
                     gradx = abs_sobel_thresh(undist_frame, orient='x', thresh_min=50, thresh_max=255)
                     grady = abs_sobel_thresh(undist_frame, orient='y', thresh_min=50, thresh_max=255)
