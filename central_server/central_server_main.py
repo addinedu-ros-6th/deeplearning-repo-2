@@ -4,6 +4,7 @@ import socket
 import struct
 import time
 from threading import Thread
+from concurrent.futures import ThreadPoolExecutor as executor
 
 # Sobel 연산을 통한 x 또는 y 방향 경계 계산 함수
 def abs_sobel_thresh(img, orient='x', thresh_min=25, thresh_max=255):
@@ -67,11 +68,14 @@ dist = np.array([[-0.26706898,  0.10305542, -0.00088013,  0.00080643, -0.1957402
 
 left_speed = 0
 right_speed = 0
+robot_state = 0
 
 def handle_client(rpi_conn, obs_conn):
-    global left_speed, right_speed
+    global left_speed, right_speed, robot_state
     try:
         while True:
+            if robot_state == 0:
+                continue
             header = b''
             while len(header) < 2:
                 header += rpi_conn.recv(2 - len(header))
@@ -180,23 +184,6 @@ def handle_client(rpi_conn, obs_conn):
                         left_speed = int(np.clip(left_speed, 0, max_speed))
                         right_speed = int(np.clip(right_speed, 0, max_speed))
                         
-                        
-                        # # 수정된 코드:
-                        # command_id = 'M'
-
-                        # motor_command = struct.pack('2shh', command_id.encode('utf-8'), left_speed, right_speed)
-                        # motor_command += b'\n'
-                        # print(f"Sending motor command: {command_id} with speeds L: {left_speed}, R: {right_speed}")
-
-                        #motor_command = b'M' + bytes([left_speed, right_speed]) + b'\n'
-                        
-                        # motor_command = bytes([10, left_speed, right_speed]) + b'\n'
-                        # motor_command = b'M' + b'R' if deviation > 0 else b'L' + right_speed.to_bytes(2, byteorder="big") + b'\n'
-
-                        # motor_command = b"M" + left_speed.to_bytes(1, byteorder="big") + right_speed.to_bytes(1, byteorder="big") + b"\n"                        
-
-                        # rpi_conn.sendall(motor_command)
-                        # print(f"send motor_command {motor_command}")
 
                     # 화면에 디버그용으로 표시
                     lane_overlay = np.zeros_like(undist_frame)
@@ -234,10 +221,13 @@ def handle_client(rpi_conn, obs_conn):
         cv2.destroyAllWindows()
 
 def send_motor_value(rpi_conn):
-    global left_speed, right_speed
+    global left_speed, right_speed, robot_state
+    
     while True:
-        start = 60
-        motor_command = start.to_bytes(1, byteorder="big") + left_speed.to_bytes(1, byteorder="big") + right_speed.to_bytes(1, byteorder="big") + b"\n" 
+        if robot_state == 0:
+            continue
+        start = b'MC'
+        motor_command = start + left_speed.to_bytes(1, byteorder="big") + right_speed.to_bytes(1, byteorder="big") + b"\n" 
 
         try:
             rpi_conn.sendall(motor_command)
@@ -248,8 +238,11 @@ def send_motor_value(rpi_conn):
         time.sleep(1)  # 2~5초에 한번 쏴주는것만으로도 충분함. 타임 슬립없으면 충돌남.
 
 def flower_detect_information(pollination_conn):
+    global robot_state
     try:
         while True:
+            if robot_state == 0:
+                continue
             header = b''
             while len(header) < 1:
                 header += pollination_conn.recv(1 - len(header))
@@ -287,15 +280,62 @@ def flower_detect_information(pollination_conn):
 
     except Exception as e:
         print(f"Error receiving pollination data: {e}")
+
+def get_robot_state(gui_conn, rpi_conn):
+    global robot_state
+    try:
+        while True:
+            header = b''
+            while len(header) < 2:
+                header += gui_conn.recv(2 - len(header))
+
+            # detect data
+            if header == b'RC':
+                data = gui_conn.recv(2)
+                state = int.from_bytes(data[:1], byteorder="big")
+                print(f"get robot state: {state}")
+                robot_state = state
+                dat = header + data
+                print(f"data {dat}")
+                rpi_conn.sendall(header + data)
+                time.sleep(5)
+                break
+
+    except Exception as e:
+        print(f"Error receiving robot state data: {e}")
+
+def send_robot_state(gui_conn, rpi_conn):
+    global robot_state
+    if robot_state == 1:
+        time.sleep(20)
+        try:
+            cv2.destroyAllWindows()
+            command = 0
+            start = b'RC'
+            send_data = start + command.to_bytes(1, byteorder="big") + b'\n'
+            gui_conn.sendall(send_data)
+            rpi_conn.sendall(send_data)
+            print(f"send robot state: {command}")
+
+            robot_state = 0
+
+        except Exception as e:
+            print(f"Error sending robot state data: {e}")
                 
 
 if __name__ == "__main__" :
 
     # 서버 설정
     server_ip = "192.168.0.134"
+    gui_server_port = 1234
     rpi_server_port = 3141
-    pollination_server_port = 8888
+    pollination_server_port = 8887
     obs_server_port = 4040
+
+    gui_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    gui_server_socket.bind((server_ip, gui_server_port))
+    gui_server_socket.listen(1)
+    print(f"서버가 {server_ip} : {gui_server_port}에서 대기 중입니다...")
 
     rpi_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     rpi_server_socket.bind((server_ip, rpi_server_port))
@@ -312,6 +352,9 @@ if __name__ == "__main__" :
     pollination_server_socket.listen(1)
     print(f"서버가 {server_ip} : {pollination_server_port}에서 대기 중입니다...")
 
+    gui_conn, addr = gui_server_socket.accept()
+    print(f"클라이언트 {addr}와 연결되었습니다.")
+
     rpi_conn, addr = rpi_server_socket.accept()
     print(f"클라이언트 {addr}와 연결되었습니다.")
 
@@ -322,20 +365,27 @@ if __name__ == "__main__" :
     print(f"클라이언트 {addr}와 연결되었습니다.")
 
     client_thread = Thread(target=handle_client, args=(rpi_conn, obs_conn))
-    client_thread.start()
-
     motor_cmd_thread = Thread(target=send_motor_value, args=(rpi_conn,))
-    motor_cmd_thread.start()
-
     pollination_thread = Thread(target=flower_detect_information, args=(pollination_conn,))
-    pollination_thread.start()
+    send_robot_thread = Thread(target=send_robot_state, args=(gui_conn, rpi_conn))
+    get_robot_thread = Thread(target=get_robot_state, args=(gui_conn, rpi_conn))
 
+    client_thread.start()
+    motor_cmd_thread.start()
+    pollination_thread.start()
+    send_robot_thread.start()
+    get_robot_thread.start()
+    
     client_thread.join()
     motor_cmd_thread.join()
     pollination_thread.join()
+    send_robot_thread.join()
+    get_robot_thread.join()
 
     rpi_conn.close()
     rpi_server_socket.close()
     pollination_conn.close()
     pollination_server_socket.close()
+    gui_conn.close()
+    gui_server_socket.close()
     cv2.destroyAllWindows()
