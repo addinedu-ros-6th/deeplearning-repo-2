@@ -7,8 +7,12 @@ import time
 import serial
 
 # 중앙 서버 정보
-CENTRAL_SERVER_IP = "192.168.0.134"
+CENTRAL_SERVER_IP = "192.168.45.66"
 CENTRAL_SERVER_PORT = 3141
+
+# pollination server
+POLLINATION_SERVER_IP = "192.168.45.244"
+POLLINATION_SERVER_PORT = 9003
 
 def connect_to_server(ip, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -80,10 +84,10 @@ def receive_motor(sock_central, ser):
                         print(f"수신된 모터 값: 왼쪽={left_value}, 오른쪽={right_value}")
 
                         # 아두이노로 전송할 명령 생성 (쉼표 포함한 문자열)
-                        cmd = f'M{left_value}{right_value}\n'.encode()
+                        # cmd = f'M{left_value}{right_value}\n'.encode()
                         ser.write(data)
                         # ser.flush()  # Ensure the command is sent immediately
-                        print(f"아두이노로 전송: {cmd}")
+                        print(f"아두이노로 전송: {data}")
 #                        time.sleep(1)
 
                         # 아두이노로부터 응답 읽기
@@ -105,12 +109,17 @@ def main():
 
     # 카메라 초기화 (필요한 경우)
     cam0 = cv2.VideoCapture(0)
-    # cam1 = cv2.VideoCapture(1)
+    cam1 = cv2.VideoCapture(1)
 
     # 중앙 서버에 연결
     central_sock = connect_to_server(CENTRAL_SERVER_IP, CENTRAL_SERVER_PORT)
     if not central_sock:
         return  # 연결 실패 시 종료
+
+    # Pollination server connect
+    pollination_sock = connect_to_server(POLLINATION_SERVER_IP, POLLINATION_SERVER_PORT)
+    if not pollination_sock:
+        return
 
     # 아두이노 연결
     try:
@@ -128,6 +137,7 @@ def main():
 
     # 스레드 생성
     frame0_thread = threading.Thread(target=send_frame, args=(central_sock, cam0))
+    frame1_thread = threading.Thread(target=send_frame, args=(pollination_sock, cam1))
     status_thread = threading.Thread(target=send_status, args=(central_sock,))
     # if ser:
     motor_command_thread = threading.Thread(target=receive_motor, args=(central_sock, ser))
@@ -136,23 +146,30 @@ def main():
 
     # 스레드 시작
     frame0_thread.start()
+    frame1_thread.start()
     status_thread.start()
     # if motor_command_thread:
     motor_command_thread.start()
 
     try:
         frame0_thread.join()
+        frame1_thread.join()
         status_thread.join()
         # if motor_command_thread:
         motor_command_thread.join()
     except KeyboardInterrupt:
-        ser.write(b'M0,0\n')
+        start = 60
+        motor_value = 0
+        ser.write(start.to_bytes(1, byteorder="big") + motor_value.to_bytes(1, byteorder="big")*2 + b'\n' )
         print("사용자에 의해 중단되었습니다.")
     finally:
         # 리소스 정리
         cam0.release()
+        cam1.release()
         if central_sock:
             central_sock.close()
+        if pollination_sock:
+            pollination_sock.close()
         if ser:
             ser.close()
 
