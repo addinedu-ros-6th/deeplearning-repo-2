@@ -5,6 +5,7 @@ import os
 import threading
 import time
 import serial
+import sys
 
 # 중앙 서버 정보
 CENTRAL_SERVER_IP = "192.168.0.134"
@@ -41,7 +42,7 @@ def send_frame(sock, cam):
         except Exception as e:
             print(f"프레임 캡처 또는 전송 오류: {e}")
         # 프레임 레이트 제한
-        # time.sleep(1/30)
+        time.sleep(1/30)
 
 def send_status(sock_central):
     while True:
@@ -66,7 +67,6 @@ def receive_motor(sock_central, ser):
             # 서버로부터 바이너리 데이터 수신
             while len(header) < 2:
                 header += sock_central.recv(2 - len(header))
-
             if header == b'MC':
                 data = sock_central.recv(3)
                 left_value = int.from_bytes(data[:1], byteorder="big")
@@ -75,7 +75,7 @@ def receive_motor(sock_central, ser):
                 print(f"수신된 모터 값: 왼쪽={left_value}, 오른쪽={right_value}")
                 start = 60
 
-                ser.write(start.to_bytes(1, byteorder="big" + data))
+                ser.write(start.to_bytes(1, byteorder="big") + data)
                 print(f"아두이노로 전송: {data}")
 
     except Exception as e:
@@ -83,14 +83,14 @@ def receive_motor(sock_central, ser):
 
 
 def main():
+    stop_event = threading.Event()
 
     # 카메라 초기화 (필요한 경우)
-    cam0 = cv2.VideoCapture(2)
-    cam1 = cv2.VideoCapture(0)
+    cam0 = cv2.VideoCapture(0)
+    cam1 = cv2.VideoCapture(1)
 
     # 중앙 서버에 연결
     central_sock = connect_to_server(CENTRAL_SERVER_IP, CENTRAL_SERVER_PORT)
-    central_sock.settimeout(None)
     if not central_sock:
         return  # 연결 실패 시 종료
 
@@ -131,6 +131,8 @@ def main():
         ser.write(send_data)
         print(f"send arduino : {send_data}")
         print("사용자에 의해 중단되었습니다.")
+        sys.stdout.flush()
+        stop_event.set()
     finally:
         # 리소스 정리
         cam0.release()
@@ -141,6 +143,7 @@ def main():
             pollination_sock.close()
         if ser:
             ser.close()
+        sys.stdout.flush()
 
 if __name__ == "__main__":
     main()
