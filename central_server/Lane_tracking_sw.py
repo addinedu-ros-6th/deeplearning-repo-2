@@ -1,4 +1,5 @@
 import cv2
+from cv2 import aruco
 import numpy as np
 import socket
 import struct
@@ -78,6 +79,29 @@ right_speed = 0
 prev_left_center_x = None
 prev_right_center_x = None
 
+# ARUCO marker의 크기와 초점 거리 (1)
+focal_length = mtx[0, 0]
+MARKER_SIZE = 0.03
+
+# ARUCO marker 텍스트를 이미지에 그리는 함수 (2)
+def draw_text(img, text, position, font=cv2.FONT_HERSHEY_SIMPLEX, 
+              scale=0.6, color=(0, 0, 255), thickness=1):
+    text_size, baseline = cv2.getTextSize(text, font, scale, thickness)
+    x, y = position
+    img_h, img_w, _ = img.shape
+
+    # Adjust x and y to ensure text is within the image boundaries
+    x = max(0, x)
+    y = max(0, y)
+
+    # Clip text to fit within image boundaries
+    text_width, text_height = text_size
+    if x + text_width > img_w or y + text_height > img_h:
+        print(f"Skipped drawing text '{text}' due to boundary issues.")
+        return
+
+    cv2.putText(img, text, (x, y + text_height), font, scale, color, thickness, cv2.LINE_AA)
+
 def handle_client(rpi_conn):
     global left_speed, right_speed
     global prev_left_center_x, prev_right_center_x
@@ -107,6 +131,50 @@ def handle_client(rpi_conn):
                 rpi_conn.recv(1)  # \n 받기
 
                 frame = cv2.imdecode(np.frombuffer(frame_data, np.uint8), cv2.IMREAD_COLOR)
+
+                # ARUCO marker 딕셔너리 생성 및 파라미터 설정 (3)
+                marker_dict = aruco.getPredefinedDictionary(aruco.DICT_5X5_100)
+                param_markers = aruco.DetectorParameters()
+
+                # ARUCO marker grayscale로 변환 (4)
+                gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                marker_corners, marker_IDs, reject = aruco.detectMarkers(
+                    gray_frame, marker_dict, parameters=param_markers
+                )
+                
+                # ARUCO marker가 검출되면 (5)
+                if marker_corners:
+                    total_markers = range(0, marker_IDs.size)
+                    for ids, corners, i in zip(marker_IDs, marker_corners, total_markers):
+                        # Draw marker boundaries
+                        cv2.polylines(
+                            frame, 
+                            [corners.astype(np.int32)], 
+                            True, 
+                            (0, 255, 255), 
+                            4, 
+                            cv2.LINE_AA
+                        )
+                        corners = corners.reshape(4, 2).astype(int)
+                        top_right = tuple(corners[0])
+                        top_left = tuple(corners[1])
+                        bottom_right = tuple(corners[2])
+                        bottom_left = tuple(corners[3])
+
+                        # Calculate pixel size of the marker
+                        pixel_width = np.linalg.norm(np.array(top_left) - np.array(top_right))
+                        pixel_height = np.linalg.norm(np.array(top_left) - np.array(bottom_left))
+                        pixel_size = (pixel_width + pixel_height) / 2  # Average pixel size
+
+                        # Estimate distance using pinhole camera model
+                        distance = (MARKER_SIZE * focal_length) / pixel_size
+
+                        # Determine text position (e.g., top_right)
+                        text_position = top_right
+
+                        # Prepare text to display
+                        text = f"id: {ids[0]} Dist: {round(distance, 2)}m"
+                        draw_text(frame, text, text_position)
 
                 if frame is not None:
                     # 카메라 캘리브레이션 적용
