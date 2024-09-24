@@ -15,6 +15,8 @@ CENTRAL_SERVER_PORT = 3141
 POLLINATION_SERVER_IP = "192.168.0.44"
 POLLINATION_SERVER_PORT = 9003
 
+robot_state = 0
+
 def connect_to_server(ip, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(5)
@@ -27,7 +29,10 @@ def connect_to_server(ip, port):
     return sock
 
 def send_frame(sock, cam):
+    global robot_state
     while True:
+        if robot_state == 0:
+            continue
         try:
             # 프레임 캡처
             ret, frame = cam.read()
@@ -45,8 +50,9 @@ def send_frame(sock, cam):
         time.sleep(1/30)
 
 def send_status(sock_central):
-    while True:
-        try:
+    try:
+        while True:
+        
             # 장치 상태 확인
             arduino_avail = os.path.exists('/dev/ttyArduino')
             vid0_avail = os.path.exists('/dev/video0')
@@ -56,17 +62,20 @@ def send_status(sock_central):
             status_packet = b'CS' + status.to_bytes(1, byteorder="big")
             sock_central.sendall(status_packet + b'\n')
             print(f"상태 전송: CS {status}")
-        except Exception as e:
+            time.sleep(5)
+
+    except Exception as e:
             print(f"상태 전송 오류: {e}")
-        time.sleep(5)  # 5초마다 상태 전송
 
 def receive_motor(sock_central, ser):
-    try:
-        while True:
+    global robot_state
+    while True:
+        try:
             header = b''
             # 서버로부터 바이너리 데이터 수신
             while len(header) < 2:
                 header += sock_central.recv(2 - len(header))
+
             if header == b'MC':
                 data = sock_central.recv(3)
                 left_value = int.from_bytes(data[:1], byteorder="big")
@@ -75,11 +84,23 @@ def receive_motor(sock_central, ser):
                 print(f"수신된 모터 값: 왼쪽={left_value}, 오른쪽={right_value}")
                 start = 60
 
-                ser.write(start.to_bytes(1, byteorder="big") + data)
+                ser.write(start.to_bytes(1, byteorder="big" ) + data)
                 print(f"아두이노로 전송: {data}")
 
-    except Exception as e:
-        print(f"모터 명령 수신 오류: {e}")
+            elif header == b'RC':
+                data = sock_central.recv(2)
+                state = int.from_bytes(data[:1], byteorder="big")
+                print(f"robot state : {state}")
+                robot_state = state
+                if robot_state == 0:
+                    start = 50
+                    motor_value = 0
+                    send_data = start.to_bytes(1, byteorder="big") + motor_value.to_bytes(1, byteorder="big")*2 + b'\n'
+                    ser.write(send_data)
+                    print(f"send arduino : {send_data}")
+
+        except Exception as e:
+            print(f"모터 명령 수신 오류: {e}")
 
 
 def main():
@@ -91,6 +112,7 @@ def main():
 
     # 중앙 서버에 연결
     central_sock = connect_to_server(CENTRAL_SERVER_IP, CENTRAL_SERVER_PORT)
+    central_sock.settimeout(None)
     if not central_sock:
         return  # 연결 실패 시 종료
 
@@ -106,6 +128,7 @@ def main():
     except serial.SerialException as e:
         print(f"시리얼 포트 열기 오류: {e}")
         return
+        
 
     # 스레드 생성
     frame0_thread = threading.Thread(target=send_frame, args=(central_sock, cam0))
