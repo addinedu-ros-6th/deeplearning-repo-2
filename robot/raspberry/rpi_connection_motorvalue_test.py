@@ -5,14 +5,17 @@ import os
 import threading
 import time
 import serial
+import sys
 
 # 중앙 서버 정보
-CENTRAL_SERVER_IP = "192.168.45.66"
+CENTRAL_SERVER_IP = "192.168.0.134"
 CENTRAL_SERVER_PORT = 3141
 
 # pollination server
-POLLINATION_SERVER_IP = "192.168.45.244"
+POLLINATION_SERVER_IP = "192.168.0.44"
 POLLINATION_SERVER_PORT = 9003
+
+robot_state = 0
 
 def connect_to_server(ip, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -26,7 +29,10 @@ def connect_to_server(ip, port):
     return sock
 
 def send_frame(sock, cam):
+    global robot_state
     while True:
+        if robot_state == 0:
+            continue
         try:
             # 프레임 캡처
             ret, frame = cam.read()
@@ -41,11 +47,12 @@ def send_frame(sock, cam):
         except Exception as e:
             print(f"프레임 캡처 또는 전송 오류: {e}")
         # 프레임 레이트 제한
-        # time.sleep(1/30)
+        time.sleep(1/30)
 
 def send_status(sock_central):
-    while True:
-        try:
+    try:
+        while True:
+        
             # 장치 상태 확인
             arduino_avail = os.path.exists('/dev/ttyArduino')
             vid0_avail = os.path.exists('/dev/video0')
@@ -55,57 +62,55 @@ def send_status(sock_central):
             status_packet = b'CS' + status.to_bytes(1, byteorder="big")
             sock_central.sendall(status_packet + b'\n')
             print(f"상태 전송: CS {status}")
-        except Exception as e:
+            time.sleep(5)
+
+    except Exception as e:
             print(f"상태 전송 오류: {e}")
-        time.sleep(5)  # 5초마다 상태 전송
 
 def receive_motor(sock_central, ser):
-    buffer = b''
+    global robot_state
     while True:
         try:
+            header = b''
             # 서버로부터 바이너리 데이터 수신
-            data = sock_central.recv(4)
-            if not data:
-                print("서버로부터 연결이 종료되었습니다.")
-                break
-            buffer += data
+            while len(header) < 2:
+                header += sock_central.recv(2 - len(header))
 
-            while b'\n' in buffer:
-                message, buffer = buffer.split(b'\n', 1)
-                if not message:
-                    continue
-                # 메시지 형식: 시작 바이트 'M' + 왼쪽 값(1바이트) + 오른쪽 값(1바이트)
-                if len(message) >= 3:
-                    start_byte = int.from_bytes(message[:1], byteorder="big")
-                    if start_byte == 60:
-                        left_value = int.from_bytes(message[1:2], byteorder="big")
-                        right_value = int.from_bytes(message[2:3], byteorder="big")
+            if header == b'MC':
+                data = sock_central.recv(3)
+                left_value = int.from_bytes(data[:1], byteorder="big")
+                right_value = int.from_bytes(data[1:2], byteorder="big")
 
-                        print(f"수신된 모터 값: 왼쪽={left_value}, 오른쪽={right_value}")
+                print(f"수신된 모터 값: 왼쪽={left_value}, 오른쪽={right_value}")
+                start = 60
 
-                        # 아두이노로 전송할 명령 생성 (쉼표 포함한 문자열)
-                        # cmd = f'M{left_value}{right_value}\n'.encode()
-                        ser.write(data)
-                        # ser.flush()  # Ensure the command is sent immediately
-                        print(f"아두이노로 전송: {data}")
-#                        time.sleep(1)
+                ser.write(start.to_bytes(1, byteorder="big" ) + data)
+                print(f"아두이노로 전송: {data}")
+#                        
+            elif header == b'RC':
+                data = sock_central.recv(2)
+                state = int.from_bytes(data[:1], byteorder="big")
+                print(f"robot state : {state}")
+                robot_state = state
+                
+            elif header == b'RS':
+                data = sock_central.recv(2)
+                state = int.from_bytes(data[:1], byteorder="big")
+                print(f"robot state : {state}")
+                robot_state = state
+                if robot_state == 0:
+                    start = 50
+                    motor_value = 0
+                    send_data = start.to_bytes(1, byteorder="big") + motor_value.to_bytes(1, byteorder="big")*2 + b'\n'
+                    ser.write(send_data)
+                    print(f"send arduino : {send_data}")
 
-                        # 아두이노로부터 응답 읽기
-                       # if ser.in_waiting > 0:
-                       #     ar_msg = ser.read(ser.in_waiting).decode('utf-8')
-                       #     print(f"아두이노 응답: {ar_msg}")
-                    else:
-                        print(f"알 수 없는 시작 바이트: {start_byte}")
-                else:
-                    print("불완전한 모터 명령 수신")
         except Exception as e:
             print(f"모터 명령 수신 오류: {e}")
-            break
-
-
 
 
 def main():
+    stop_event = threading.Event()
 
     # 카메라 초기화 (필요한 경우)
     cam0 = cv2.VideoCapture(0)
@@ -113,6 +118,7 @@ def main():
 
     # 중앙 서버에 연결
     central_sock = connect_to_server(CENTRAL_SERVER_IP, CENTRAL_SERVER_PORT)
+    central_sock.settimeout(None)
     if not central_sock:
         return  # 연결 실패 시 종료
 
@@ -124,44 +130,37 @@ def main():
     # 아두이노 연결
     try:
         ser = serial.Serial(port='/dev/ttyArduino', baudrate=9600)
-#        ser.dtr = False
-#        time.sleep(1)
-#        ser.dtr = True
         print("아두이노에 연결되었습니다.")
-        # Flush input buffer
-        # ser.reset_input_buffer()
     except serial.SerialException as e:
         print(f"시리얼 포트 열기 오류: {e}")
         return
-        # ser = None
 
     # 스레드 생성
     frame0_thread = threading.Thread(target=send_frame, args=(central_sock, cam0))
     frame1_thread = threading.Thread(target=send_frame, args=(pollination_sock, cam1))
     status_thread = threading.Thread(target=send_status, args=(central_sock,))
-    # if ser:
     motor_command_thread = threading.Thread(target=receive_motor, args=(central_sock, ser))
-    # else:
-    #     motor_command_thread = None
 
     # 스레드 시작
     frame0_thread.start()
     frame1_thread.start()
     status_thread.start()
-    # if motor_command_thread:
     motor_command_thread.start()
 
     try:
         frame0_thread.join()
         frame1_thread.join()
         status_thread.join()
-        # if motor_command_thread:
         motor_command_thread.join()
     except KeyboardInterrupt:
-        start = 60
+        start = 50
         motor_value = 0
-        ser.write(start.to_bytes(1, byteorder="big") + motor_value.to_bytes(1, byteorder="big")*2 + b'\n' )
+        send_data = start.to_bytes(1, byteorder="big") + motor_value.to_bytes(1, byteorder="big")*2 + b'\n'
+        ser.write(send_data)
+        print(f"send arduino : {send_data}")
         print("사용자에 의해 중단되었습니다.")
+        sys.stdout.flush()
+        stop_event.set()
     finally:
         # 리소스 정리
         cam0.release()
@@ -172,9 +171,7 @@ def main():
             pollination_sock.close()
         if ser:
             ser.close()
+        sys.stdout.flush()
 
 if __name__ == "__main__":
     main()
-
-
-
