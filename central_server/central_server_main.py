@@ -295,32 +295,29 @@ def get_robot_state(gui_conn, rpi_conn):
                 state = int.from_bytes(data[:1], byteorder="big")
                 print(f"get robot state: {state}")
                 robot_state = state
-                dat = header + data
-                print(f"data {dat}")
                 rpi_conn.sendall(header + data)
-                time.sleep(5)
-                break
 
     except Exception as e:
         print(f"Error receiving robot state data: {e}")
 
 def send_robot_state(gui_conn, rpi_conn):
     global robot_state
-    if robot_state == 1:
-        time.sleep(20)
-        try:
-            cv2.destroyAllWindows()
-            command = 0
-            start = b'RC'
-            send_data = start + command.to_bytes(1, byteorder="big") + b'\n'
-            gui_conn.sendall(send_data)
-            rpi_conn.sendall(send_data)
-            print(f"send robot state: {command}")
+    while True:
+        if robot_state == 1:
+            time.sleep(20)
+            try:
+                cv2.destroyAllWindows()
+                command = 0
+                start = b'RS'
+                send_data = start + command.to_bytes(1, byteorder="big") + b'\n'
+                gui_conn.sendall(send_data)
+                rpi_conn.sendall(send_data)
+                print(f"send robot state: {command}")
 
-            robot_state = 0
+                robot_state = 0
 
-        except Exception as e:
-            print(f"Error sending robot state data: {e}")
+            except Exception as e:
+                print(f"Error sending robot state data: {e}")
                 
 
 if __name__ == "__main__" :
