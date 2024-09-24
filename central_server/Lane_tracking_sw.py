@@ -81,7 +81,7 @@ prev_right_center_x = None
 
 # ARUCO marker의 크기와 초점 거리 (1)
 focal_length = mtx[0, 0]
-MARKER_SIZE = 0.03
+MARKER_SIZE = 0.0195
 
 # ARUCO marker 텍스트를 이미지에 그리는 함수 (2)
 def draw_text(img, text, position, font=cv2.FONT_HERSHEY_SIMPLEX, 
@@ -179,7 +179,7 @@ def handle_client(rpi_conn):
                 if frame is not None:
                     # 카메라 캘리브레이션 적용
                     undist_frame = cv2.undistort(frame, mtx, dist, None, mtx)
- 
+
                     # 차선 검출
                     gradx = abs_sobel_thresh(undist_frame, orient='x', thresh_min=50, thresh_max=255)
                     grady = abs_sobel_thresh(undist_frame, orient='y', thresh_min=50, thresh_max=255)
@@ -230,7 +230,7 @@ def handle_client(rpi_conn):
                     # 두 차선의 무게중심 간의 거리 계산
                     if left_center_x is not None and right_center_x is not None:
                         lane_distance = abs(right_center_x - left_center_x)
-                        lane_distance_threshold = 50  # 임계값 설정 (실험을 통해 조절 필요)
+                        lane_distance_threshold = 52  # 임계값 설정 (실험을 통해 조절 필요)
 
                         # 차선 너비를 영상에 표시 (픽셀 단위)
                         cv2.putText(undist_frame, f"Lane Width: {lane_distance}px", (50, 50),
@@ -246,13 +246,13 @@ def handle_client(rpi_conn):
                                 if abs(left_center_x - prev_left_center_x) < abs(left_center_x - prev_right_center_x):
                                     # 오른쪽 차선이 사라진 것으로 판단하고 오른쪽으로 회전
                                     print("오른쪽 차선이 사라졌습니다. 오른쪽으로 회전합니다.")
-                                    left_speed = 65  # 왼쪽 바퀴 속도
-                                    right_speed = 25  # 오른쪽 바퀴 속도
+                                    left_speed = 47  # 왼쪽 바퀴 속도
+                                    right_speed = 5  # 오른쪽 바퀴 속도
                                 else:
                                     # 왼쪽 차선이 사라진 것으로 판단하고 왼쪽으로 회전
                                     print("왼쪽 차선이 사라졌습니다. 왼쪽으로 회전합니다.")
-                                    left_speed = 25  # 왼쪽 바퀴 속도
-                                    right_speed = 65  # 오른쪽 바퀴 속도
+                                    left_speed = 5  # 왼쪽 바퀴 속도
+                                    right_speed = 47  # 오른쪽 바퀴 속도
                             else:
                                 # 이전 프레임의 정보가 없는 경우 기본 동작 설정
                                 print("차선 정보가 부족하여 기본 동작을 수행합니다.")
@@ -289,17 +289,17 @@ def handle_client(rpi_conn):
                             if abs(left_center_x - prev_right_center_x) < abs(left_center_x - prev_left_center_x):
                                 # 왼쪽 차선이 사라지고 오른쪽 차선만 남은 것으로 판단
                                 print("왼쪽 차선이 사라졌습니다. 왼쪽으로 회전합니다.")
-                                left_speed = 25  # 왼쪽 바퀴 속도
-                                right_speed = 67  # 오른쪽 바퀴 속도
+                                left_speed = 5  # 왼쪽 바퀴 속도
+                                right_speed = 47  # 오른쪽 바퀴 속도
                             else:
                                 print("오른쪽 차선이 사라졌습니다. 오른쪽으로 회전합니다.")
-                                left_speed = 67  # 왼쪽 바퀴 속도
-                                right_speed = 25  # 오른쪽 바퀴 속도
+                                left_speed = 47  # 왼쪽 바퀴 속도
+                                right_speed = 5  # 오른쪽 바퀴 속도
                         else:
                             # 이전 오른쪽 차선 정보가 없을 때 기본적으로 오른쪽으로 회전
                             print("오른쪽 차선이 사라졌습니다. 오른쪽으로 회전합니다.")
-                            left_speed = 67
-                            right_speed = 25
+                            left_speed = 47
+                            right_speed = 5
                     elif left_center_x is None and right_center_x is not None:
                         # 왼쪽 차선이 사라진 경우
                         if prev_left_center_x is not None:
@@ -307,17 +307,17 @@ def handle_client(rpi_conn):
                             if abs(right_center_x - prev_left_center_x) < abs(right_center_x - prev_right_center_x):
                                 # 오른쪽 차선이 사라지고 왼쪽 차선만 남은 것으로 판단
                                 print("오른쪽 차선이 사라졌습니다. 오른쪽으로 회전합니다.")
-                                left_speed = 67  # 왼쪽 바퀴 속도
-                                right_speed = 25  # 오른쪽 바퀴 속도
+                                left_speed = 47  # 왼쪽 바퀴 속도
+                                right_speed = 5  # 오른쪽 바퀴 속도
                             else:
                                 print("왼쪽 차선이 사라졌습니다. 왼쪽으로 회전합니다.")
-                                left_speed = 25  # 왼쪽 바퀴 속도
-                                right_speed = 67  # 오른쪽 바퀴 속도
+                                left_speed = 5  # 왼쪽 바퀴 속도
+                                right_speed = 47  # 오른쪽 바퀴 속도
                         else:
                             # 이전 왼쪽 차선 정보가 없을 때 기본적으로 왼쪽으로 회전
                             print("왼쪽 차선이 사라졌습니다. 왼쪽으로 회전합니다.")
-                            left_speed = 25
-                            right_speed = 67
+                            left_speed = 5
+                            right_speed = 47
                     else:
                         # 차선이 모두 감지되지 않은 경우, 속도를 감소하거나 정지
                         print("차선이 감지되지 않았습니다. 속도를 감소합니다.")
