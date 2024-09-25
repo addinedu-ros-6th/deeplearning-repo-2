@@ -6,124 +6,41 @@ import time
 from ultralytics import YOLO
 import argparse
 import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.use('TkAgg')  # Use 'Agg' for non-GUI rendering if 'TkAgg' isn't available
+from sklearn.cluster import DBSCAN
 
 # ----------------------------- Helper Functions ----------------------------- #
 
 def draw_markers_with_shifted_text(frame, marker_corners, marker_IDs, shift_x, shift_y):
+    """
+    각 ArUco 마커의 ID를 프레임에 표시합니다.
+    """
     try:
-        # 마커 그리기 (ID 텍스트는 생략)
-        # cv.aruco.drawDetectedMarkers(frame, marker_corners, marker_IDs, borderColor=(0, 255, 0))
-
-        # 각 마커의 ID를 수동으로 표시
         if marker_IDs is not None:
             for i, marker_corner in enumerate(marker_corners):
-                # 마커의 좌측 상단 좌표 가져오기
-                top_left_corner = marker_corner[0][0]  # marker_corner는 (4, 2) shape의 배열임
-                marker_id = marker_IDs[i][0]  # 각 마커의 ID
-                
-                # 텍스트 위치 계산 (좌측 상단에서 shift_x, shift_y만큼 이동)
+                top_left_corner = marker_corner[0][0]
+                marker_id = marker_IDs[i][0]
                 text_position = (int(top_left_corner[0] + shift_x), int(top_left_corner[1] + shift_y))
-                
-                # ID 텍스트 그리기
                 cv.putText(frame, f"ID: {marker_id}", text_position, cv.FONT_HERSHEY_SIMPLEX, 
                            0.5, (0, 0, 255), 1 , cv.LINE_AA)
     except cv.error as e:
         print(f"OpenCV error during drawDetectedMarkers: {e}")
-    
     return frame
-
-def annotate_markers(frame, marker_IDs, marker_corners, marker_size, camera_matrix, dist_coeffs, draw_text_func, text_angle=0):
-    """
-    Annotates detected ArUco markers on the frame by drawing their boundaries and estimating camera pose.
-    Returns the annotated frame and estimated rotation and translation vectors.
-    """
-    if marker_corners is None or marker_IDs is None:
-        # print("No markers to annotate.")
-        return frame, None, None  # No markers to annotate
-
-    # print(f"Annotating {len(marker_IDs)} marker(s).")
-    # print(f"Type of marker_corners: {type(marker_corners)}")
-    # print(f"Shapes of marker_corners elements: {[corner.shape for corner in marker_corners]}")
-    # print(f"Dtypes of marker_corners elements: {[corner.dtype for corner in marker_corners]}")  # Added line
-
-    # Define 3D points of the marker corners in the marker's coordinate system
-    # Assuming markers are placed on the XY plane with Z=0
-    obj_points = np.array([
-        [-marker_size/2, marker_size/2, 0],
-        [marker_size/2, marker_size/2, 0],
-        [marker_size/2, -marker_size/2, 0],
-        [-marker_size/2, -marker_size/2, 0]
-    ], dtype=np.float32)
-
-    # Lists to store object points and image points for solvePnP
-    obj_points_all = []
-    img_points_all = []
-
-    for i in range(len(marker_IDs)):
-        corners = marker_corners[i]
-        reshaped_corners = corners.reshape(-1, 2)
-        obj_points_all.append(obj_points)
-        img_points_all.append(reshaped_corners)
-
-    obj_points_all = np.vstack(obj_points_all)
-    img_points_all = np.vstack(img_points_all)
-
-    # print(f"Object Points Shape: {obj_points_all.shape}")
-    # print(f"Image Points Shape: {img_points_all.shape}")
-
-    # Ensure the points are of type float32 or float64
-    if obj_points_all.dtype != np.float32 and obj_points_all.dtype != np.float64:
-        obj_points_all = obj_points_all.astype(np.float32)
-    if img_points_all.dtype != np.float32 and img_points_all.dtype != np.float64:
-        img_points_all = img_points_all.astype(np.float32)
-
-    # Estimate pose using solvePnP
-    success, rvec, tvec = cv.solvePnP(obj_points_all, img_points_all, camera_matrix, dist_coeffs, flags=cv.SOLVEPNP_ITERATIVE)
-
-    if not success:
-        print("Pose estimation failed.")
-        return frame, None, None
-
-    # Correct function call to draw detected markers
-    # print("Drawing detected markers.")
-    try:
-        draw_markers_with_shifted_text(frame, marker_corners, marker_IDs, shift_x=10, shift_y=-10)
-        # cv.aruco.drawDetectedMarkers(frame, marker_corners, marker_IDs)
-    except cv.error as e:
-        print(f"OpenCV error during drawDetectedMarkers: {e}")
-        return frame, rvec, tvec
-
-    for i in range(len(marker_IDs)):
-        # Draw the pose axes
-        # cv.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvec, tvec, int(marker_size * 100))  # Adjust axis length as needed
-
-        # Optionally, add text with marker ID
-        center = tuple(np.mean(marker_corners[i][0], axis=0).astype(int))
-        text = f"ID:{marker_IDs[i]}"
-        # draw_rotated_text(frame, text, (center[0], center[1]), angle=text_angle)
-
-    return frame, rvec, tvec
 
 def get_object_centers(results):
     """
-    Extracts the center coordinates of detected objects from YOLO results.
-    Returns a dictionary with object IDs as keys and center coordinates as values.
+    YOLO 결과에서 객체의 중심 좌표를 추출합니다.
     """
     centers = {}
     for result in results:
         boxes = result.boxes
         for box in boxes:
-            # 바운딩 박스 좌표
             x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
             center_x = (x1 + x2) / 2.0
             center_y = (y1 + y2) / 2.0
-            
-            # 객체 ID
             class_name = int(box.cls)
+            # print(f"box.cls: {int(box.cls)}, type: {type(box.cls)}")
+            # print(f"box.cls: {box.cls.item()}, type: {type(box.cls.item())}")
             track_id = int(box.id[0]) if box.id is not None else -1
-            
             if track_id not in centers:
                 centers[track_id] = []
             centers[track_id].append((track_id, (center_x, center_y), class_name))
@@ -138,19 +55,15 @@ def estimate_camera_pose(marker_corners, marker_ids, marker_positions_cm, marker
     half_size = marker_size_cm / 2.0
     for i, marker_id in enumerate(marker_ids.flatten()):
         if marker_id in marker_positions_cm:
-            # 마커의 중심 위치 가져오기
             center_pos = marker_positions_cm[marker_id]
-            # 마커의 코너에 대한 객체 포인트 정의
             obj_pts = np.array([
                 [-half_size, half_size, 0],
                 [half_size, half_size, 0],
                 [half_size, -half_size, 0],
                 [-half_size, -half_size, 0]
             ], dtype=np.float32)
-            # 마커의 위치로 코너 이동
             obj_pts += center_pos.reshape(1, 3)
             object_points.append(obj_pts)
-            # 이미지 포인트 가져오기 (마커의 코너)
             img_pts = marker_corners[i][0].reshape(4, 2)
             image_points.append(img_pts)
         else:
@@ -163,9 +76,7 @@ def estimate_camera_pose(marker_corners, marker_ids, marker_positions_cm, marker
     object_points = np.concatenate(object_points, axis=0).astype(np.float32)
     image_points = np.concatenate(image_points, axis=0).astype(np.float32)
     
-    object_points_m = object_points
-    
-    success, rvec, tvec = cv.solvePnP(object_points_m, image_points, camera_matrix, dist_coeffs, flags=cv.SOLVEPNP_ITERATIVE)
+    success, rvec, tvec = cv.solvePnP(object_points, image_points, camera_matrix, dist_coeffs, flags=cv.SOLVEPNP_ITERATIVE)
     
     if not success:
         print("Camera pose estimation failed.")
@@ -175,26 +86,21 @@ def estimate_camera_pose(marker_corners, marker_ids, marker_positions_cm, marker
 
 def measure_marker_distances(marker_corners, marker_ids, marker_size, camera_matrix, dist_coeffs):
     """
-    Measures the distance to each detected ArUco marker.
-    Returns a dictionary mapping marker IDs to their distances and poses.
+    각 ArUco 마커까지의 거리를 측정합니다.
     """
     distances = {}
     for i in range(len(marker_ids)):
         corners = marker_corners[i]
-        marker_id = marker_ids[i][0]  # marker_ids is [[id1], [id2], ...]
-        # Define object points for the marker in its own coordinate system
+        marker_id = marker_ids[i][0]
         obj_points = np.array([
             [-marker_size/2, marker_size/2, 0],
             [marker_size/2, marker_size/2, 0],
             [marker_size/2, -marker_size/2, 0],
             [-marker_size/2, -marker_size/2, 0]
         ], dtype=np.float32)
-        # Image points
         img_points = corners.reshape(-1, 2)
-        # Estimate pose
         success, rvec, tvec = cv.solvePnP(obj_points, img_points, camera_matrix, dist_coeffs)
         if success:
-            # Compute distance as norm of tvec
             distance = np.linalg.norm(tvec)
             distances[marker_id] = {'distance': distance, 'rvec': rvec, 'tvec': tvec}
         else:
@@ -203,39 +109,38 @@ def measure_marker_distances(marker_corners, marker_ids, marker_size, camera_mat
 
 def calibrate_3d_points(points_3d_marker, marker_positions_cm):
     """
-    삼각측량된 3D 포인트를 ArUco 마커의 실제 위치를 기반으로 보정합니다.
-    간단한 스케일 보정 예시.
+    여러 마커를 사용하여 평균 스케일 팩터를 계산하고 3D 포인트를 보정합니다.
     """
-    # ArUco 마커의 ID와 실제 위치가 알려진 경우
-    # 여기서는 예시로 하나의 마커를 사용하여 스케일을 보정합니다.
-    # 실제로는 여러 마커를 사용하여 더 정밀한 보정을 할 수 있습니다.
-    
-    if 14 in points_3d_marker and 14 in marker_positions_cm:
-        # 마커 ID 14의 삼각측량된 포인트와 실제 위치
-        triangulated_point = points_3d_marker[14]
-        actual_position = marker_positions_cm[14]
-        
-        # 스케일 팩터 계산 (실제 거리 / 삼각측량된 거리)
-        triangulated_distance = np.linalg.norm(triangulated_point)
-        actual_distance = np.linalg.norm(actual_position)
-        scale_factor = actual_distance / triangulated_distance
-        
-        print(f"스케일 팩터: {scale_factor}")
-        
-        # 모든 3D 포인트에 스케일 팩터 적용
+    scale_factors = []
+    for marker_id in points_3d_marker:
+        if marker_id in marker_positions_cm:
+            triangulated_point = points_3d_marker[marker_id]['point']
+            actual_position = marker_positions_cm[marker_id]
+            triangulated_distance = np.linalg.norm(triangulated_point)
+            actual_distance = np.linalg.norm(actual_position)
+            if triangulated_distance == 0:
+                print(f"Triangulated distance for marker ID {marker_id} is zero. Skipping scale factor.")
+                continue
+            scale_factor = actual_distance / triangulated_distance
+            scale_factors.append(scale_factor)
+            print(f"Marker ID {marker_id}: Scale Factor = {scale_factor}")
+
+    if scale_factors:
+        average_scale = np.mean(scale_factors)
+        print(f"Average Scale Factor: {average_scale}")
+        # for obj_id in points_3d_marker:
+            # points_3d_marker[obj_id] *= average_scale
         for obj_id in points_3d_marker:
-            points_3d_marker[obj_id] *= scale_factor
-    
+            points_3d_marker[obj_id]['point'] = np.array(points_3d_marker[obj_id]['point']) * average_scale  # numpy array로 변환 후 곱셈
+
     return points_3d_marker
 
 def remove_duplicates(points_3d_list, distance_threshold=5.0):
     """
-    리스트에서 중복되는 3D 포인트를 제거합니다.
-    포인트 간의 거리가 distance_threshold(cm) 미만이면 중복으로 간주합니다.
+    중복되는 3D 포인트를 제거합니다. 포인트 간의 거리가 distance_threshold(cm) 미만이면 중복으로 간주합니다.
     """
     unique_points = []
     for point in points_3d_list:
-        print(f"Point: {point}")
         duplicate_found = False
         for upoint in unique_points:
             distance = np.linalg.norm(point - upoint)
@@ -246,11 +151,134 @@ def remove_duplicates(points_3d_list, distance_threshold=5.0):
             unique_points.append(point)
     return unique_points
 
-def save_to_database(points_3d_list):
+def triangulate_3d_points(captures, camera_matrix, dist_coeffs):
+    points_3d_marker = {}
+    for i in range(len(captures) - 1):
+        for j in range(i + 1, len(captures)):
+            capture1 = captures[i]
+            capture2 = captures[j]
+
+            R1, _ = cv.Rodrigues(capture1['rvec'])
+            t1 = capture1['tvec'].reshape(3, 1)
+            R2, _ = cv.Rodrigues(capture2['rvec'])
+            t2 = capture2['tvec'].reshape(3, 1)
+            P1 = camera_matrix @ np.hstack((R1, t1))
+            P2 = camera_matrix @ np.hstack((R2, t2))
+
+            centers1 = capture1['object_centers']
+            centers2 = capture2['object_centers']
+            common_ids = set(centers1.keys()).intersection(centers2.keys())
+
+            if not common_ids:
+                print(f"No common objects between capture {i} and capture {j}.")
+                continue
+
+            for obj_id in common_ids:
+                pt1 = np.array(centers1[obj_id][0][1], dtype=np.float32).reshape(2, 1)
+                pt2 = np.array(centers2[obj_id][0][1], dtype=np.float32).reshape(2, 1)
+                class_id = centers1[obj_id][0][2]  # Assuming class_id is consistent across captures
+                print(f"Triangulating for ID {obj_id}: Capture {i} (x={pt1[0][0]}, y={pt1[1][0]}), Capture {j} (x={pt2[0][0]}, y={pt2[1][0]})")
+                point_4d_hom = cv.triangulatePoints(P1, P2, pt1, pt2)
+                point_3d = cv.convertPointsFromHomogeneous(point_4d_hom.T)[0][0]  # (x, y, z)
+
+                if obj_id not in points_3d_marker:
+                    points_3d_marker[obj_id] = {'point': point_3d, 'class_id': class_id}
+                else:
+                    existing_point = points_3d_marker[obj_id]['point']
+                    avg_point = np.mean([existing_point, point_3d], axis=0)
+                    points_3d_marker[obj_id]['point'] = avg_point
+                    # Ensure class IDs are consistent
+                    if points_3d_marker[obj_id]['class_id'] != class_id:
+                        print(f"Warning: Class ID mismatch for object ID {obj_id}")
+    return points_3d_marker
+
+def visualize_3d_points(points_3d_marker, save_dir, capture_time):
     """
-    3D 포인트를 데이터베이스에 저장합니다.
+    3D 포인트를 시각화하고 파일로 저장합니다.
     """
-    pass
+    if not points_3d_marker:
+        print("No 3D points to visualize.")
+        return
+
+    points_array = np.array(list(points_3d_marker.values()))
+    clustering = DBSCAN(eps=1.0, min_samples=2).fit(points_array)
+    labels = clustering.labels_
+    num_flowers = len(set(labels))
+    print(f"\n클러스터링을 통해 추정된 꽃의 개수는 {num_flowers}개 입니다.")
+
+    # 3D 포인트 시각화
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    for idx, (obj_id, point) in enumerate(points_3d_marker.items()):
+        cluster_id = labels[idx]
+        ax.scatter(point[0], point[1], point[2], label=f'Cluster {cluster_id}')
+        ax.text(point[0], point[1], point[2], f'ID:{obj_id}')
+    ax.set_xlabel('X (cm)')
+    ax.set_ylabel('Y (cm)')
+    ax.set_zlabel('Z (cm)')
+    ax.legend()
+    plot_filename = os.path.join(save_dir, f"triangulated_3d_points_{capture_time}.png")
+    plt.savefig(plot_filename)
+    plt.close(fig)
+    print(f"3D plot saved as {plot_filename}")
+
+    return num_flowers
+
+# def count_flowers_by_distance(points_3d_marker, distance_threshold=5.0):
+#     """
+#     3D 포인트 간의 거리를 계산하여 서로 다른 꽃의 개수를 셉니다.
+#     포인트 간의 거리가 distance_threshold(cm) 이상이면 별개의 꽃으로 간주합니다.
+#     """
+#     unique_points = {}
+#     num_flowers = 0
+
+#     for obj_id, point in points_3d_marker.items():
+#         duplicate_found = False
+
+#         # 기존에 저장된 unique_points와 거리를 계산하여 중복 여부 확인
+#         for up_id, upoint in unique_points.items():
+#             distance = np.linalg.norm(point - upoint)
+#             if distance < distance_threshold:
+#                 duplicate_found = True
+#                 break
+        
+#         # 중복되지 않은 포인트는 새로운 꽃으로 간주
+#         if not duplicate_found:
+#             unique_points[obj_id] = point
+#             num_flowers += 1  # 새로운 꽃 추가
+
+#     return num_flowers, unique_points
+
+def count_flowers_by_distance(points_3d_marker, distance_threshold=5.0, class_num=None):
+    """
+    Count the number of unique flowers based on distance and class number.
+    Only considers points with the specified class_num.
+    """
+    unique_points = {}
+    num_flowers = 0
+
+    for obj_id, data in points_3d_marker.items():
+        point = data['point']
+        class_id = data['class_id']
+        if class_num is not None and class_id != class_num:
+            continue  # Skip points not matching the class_num
+
+        duplicate_found = False
+
+        # Check distance to existing unique points
+        for up_id, up_data in unique_points.items():
+            upoint = up_data['point']
+            distance = np.linalg.norm(point - upoint)
+            if distance < distance_threshold:
+                duplicate_found = True
+                break
+
+        if not duplicate_found:
+            unique_points[obj_id] = data
+            num_flowers += 1  # New flower detected
+
+    return num_flowers, unique_points
+
 
 # ----------------------------- Main Function ----------------------------- #
 
@@ -289,16 +317,17 @@ def main():
         for device in os.listdir('/dev/'):
             if device.startswith('video'):
                 video_devices.append(device)
-        # print("Available video devices:", video_devices)
+        external_cam = 0  # Default to webcam
         for device in video_devices:
             device_id = int(device.replace('video', ''))
-            cap = cv.VideoCapture(device_id)
-            if cap.isOpened() and device_id != 0:
+            cap_test = cv.VideoCapture(device_id)
+            if cap_test.isOpened() and device_id != 0:
                 print(f"Device /dev/{device} (ID: {device_id}) is available.")
-                cap.release()
                 external_cam = device_id
-        
-        cap = cv.VideoCapture(external_cam)  # 기본 웹캠 사용
+                cap_test.release()
+                break
+
+        cap = cv.VideoCapture(external_cam)  # Use external webcam if available
         if not cap.isOpened():
             print("웹캠을 열 수 없습니다.")
             return
@@ -315,118 +344,76 @@ def main():
         # 6. Set Up ArUco Marker Detector
         aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_5X5_100)
         parameters = aruco.DetectorParameters()
-        # print("ArUco 마커 검출기가 설정되었습니다.")
 
         # 7. Known Marker Positions (in cm)
         marker_positions_cm = {
+            4: np.array([50.0, 0.0, 50.0], dtype=np.float32),
+            11: np.array([60.0, 10.0, 50.0], dtype=np.float32),
+            12: np.array([70.0, 20.0, 50.0], dtype=np.float32),
             13: np.array([100.0, 0.0, 100.0], dtype=np.float32),
             14: np.array([0.0, 50.0, 0.0], dtype=np.float32),
+            17: np.array([80.0, 30.0, 50.0], dtype=np.float32),
+            18: np.array([90.0, 40.0, 50.0], dtype=np.float32),
             # 필요한 만큼 마커 추가
         }
         marker_size_cm = args.marker_size_cm
 
         # 8. Initialize Variables for Captures
-        captures = []  # List to store capture data
-        capture_count = 0
-        point_3d_list = []
-        
+        saved_frames = []  # List to store captured frames
+        results_list = []  # List to store results for each frame
+
         # 9. Main Processing Loop
+        print("Press 's' to save a frame, 'd' to process saved frames, 'q' to quit.")
         while True:
             ret, frame = cap.read()
             if not ret:
                 print("프레임을 읽을 수 없습니다.")
                 break
 
-            # Undistort Frame
+            # Undistort and rotate the frame
             frame_undist = cv.undistort(frame, camera_matrix, dist_coeffs)
             rotated_frame_undist = cv.rotate(frame_undist, cv.ROTATE_90_COUNTERCLOCKWISE)
 
-            # Detect ArUco Markers and Estimate Pose
+            # Convert to grayscale for ArUco detection
             gray = cv.cvtColor(rotated_frame_undist, cv.COLOR_BGR2GRAY)
-            
-            # try:
-            #     # Detect ArUco markers directly using aruco.detectMarkers
-            #     ids, corners, rejected = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
-                
-            #     # Check if any markers are detected
-            #     if ids is not None and len(ids) > 0:
-            #         # Process the detected markers
-            #         for idx, marker_id in enumerate(ids.flatten()):
-            #             print(f"Detected Marker ID: {marker_id}")
-            #             # You can further process the `corners` here, such as estimating pose, etc.
-            #     else:
-            #         print("No ArUco markers detected.")
-            #         ids, corners = None, None
-            # except cv.error as e:
-            #     print(f"OpenCV error during detectMarkers: {e}")
-            #     ids, corners = None, None
-            
-            # ArUco 마커 직접 감지 코드
+
+            # Detect ArUco markers
             corners, ids, rejected = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
 
-            if ids is not None:
-                for idx, marker_id in enumerate(ids.flatten()):
-                    # print(f"Detected Marker ID: {marker_id}")
-                    pass
-            else:
-                ids, corners = None, None  # 감지되지 않았을 때는 None으로 처리
-
+            # Annotate frame with marker information
             frame_annotated = rotated_frame_undist.copy()
             if ids is not None and corners is not None:
                 rvec, tvec = estimate_camera_pose(corners, ids, marker_positions_cm, marker_size_cm, camera_matrix, dist_coeffs)
-                if rvec is None or tvec is None:
-                    print("Camera pose estimation failed.")
-                    continue
-                marker_poses = measure_marker_distances(corners, ids, args.marker_size_cm, camera_matrix, dist_coeffs)
-                for marker_id, data in marker_poses.items():
-                    distance = data['distance']
-                    # Annotate distance on the frame
-                    i = np.where(ids == marker_id)[0][0]
-                    center = tuple(np.mean(corners[i][0], axis=0).astype(int))
-                    cv.putText(frame_annotated, f"{distance:.2f}cm", center, cv.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,100), 2)
+                if rvec is not None and tvec is not None:
+                    marker_poses = measure_marker_distances(corners, ids, marker_size_cm, camera_matrix, dist_coeffs)
+                    for marker_id, data in marker_poses.items():
+                        distance = data['distance']
+                        i = np.where(ids == marker_id)[0][0]
+                        center = tuple(np.mean(corners[i][0], axis=0).astype(int))
+                        cv.putText(frame_annotated, f"{distance:.2f}cm", center, cv.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,100), 2)
+                else:
+                    marker_poses = {}
             else:
                 marker_poses = {}
-                rvec, tvec = None, None
 
-            # Annotate Markers
+            # Draw marker IDs
             if ids is not None and corners is not None:
-                draw_markers_with_shifted_text(frame_annotated, corners, ids, shift_x=10, shift_y=-10)
+                frame_annotated = draw_markers_with_shifted_text(frame_annotated, corners, ids, shift_x=10, shift_y=-10)
 
             # Perform YOLO Object Tracking
             results = model.track(frame_annotated, persist=True, tracker="bytetrack.yaml", conf=0.25, iou=0.3, classes=None, verbose=False)
-            # 감지된 모든 객체에 대한 정보 출력
-            # for result in results:
-            #     print(f"객체 좌표: {result.boxes.xyxy}")
-            #     print(f"객체 클래스 인덱스: {result.boxes.cls}")
-            #     print(f"객체 트래킹 ID: {result.boxes.id}")
-            #     print(f"객체 confidence score: {result.boxes.conf}")
 
             # Extract Object Centers
             object_centers = get_object_centers(results)
-            
-            # 디버깅: 현재 프레임에서 감지된 객체 ID와 중심 좌표 출력
-            # print("현재 프레임에서 감지된 객체 ID와 중심 좌표:")
-            
-            # results 디버깅
-            # for track_id, centers in object_centers.items():
-            #     for idx, center in enumerate(centers):
-            #         print(f"ID: {track_id}, Center: ({center[0]}, {center[1]}, Class: {center[2]})")
-            #         pass
 
             # Annotate Objects with Bounding Boxes and IDs
             for result in results:
                 boxes = result.boxes
                 for box in boxes:
-                    # Bounding box coordinates
                     x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
                     x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-                    
-                    # Object ID
                     track_id = int(box.id[0]) if box.id is not None else -1
-                    
-                    # Class Name
                     class_name = int(box.cls)
-                    # print(f"객체 ID: {track_id}, 클래스: {class_name}, 좌표: ({x1}, {y1}) - ({x2}, {y2})")
 
                     # Draw bounding box
                     cv.rectangle(frame_annotated, (x1, y1), (x2, y2), (0, 255, 0), 2)
@@ -461,102 +448,38 @@ def main():
                 print(f"프레임을 저장했습니다: {frame_filename}")
 
                 # Save object centers and camera pose
-                captures.append({
+                saved_frames.append({
                     'time': capture_time,
                     'object_centers': object_centers.copy(),
-                    'rvec': rvec.copy(),
-                    'tvec': tvec.copy(),
+                    'marker_poses': marker_poses.copy(),
+                    'rvec': rvec.copy() if 'rvec' in locals() else None,
+                    'tvec': tvec.copy() if 'tvec' in locals() else None,
                     'frame': frame_no_bbox.copy()
                 })
-                capture_count += 1
-                print(f"캡처 {capture_count}번 완료.")
+                print(f"캡처 {len(saved_frames)}번 완료.")
 
-                # If two captures are done, perform triangulation
-                if capture_count == 2:
-                    print("두 번의 캡처가 완료되었습니다. 3D 좌표를 계산합니다.")
-                    capture1, capture2 = captures
+            elif key == ord('d'):
+                if len(saved_frames) < 2:
+                    print("두 개 이상의 프레임을 캡처해야 삼각측량을 수행할 수 있습니다.")
+                    continue
+                else:
+                    print("저장된 프레임들을 처리하여 3D 좌표를 계산합니다.")
 
-                    # Projection matrices
-                    R1, _ = cv.Rodrigues(capture1['rvec'])
-                    t1 = capture1['tvec']
-                    R2, _ = cv.Rodrigues(capture2['rvec'])
-                    t2 = capture2['tvec']
+                    points_3d_marker = triangulate_3d_points(saved_frames, camera_matrix, dist_coeffs)
+                    points_3d_marker = calibrate_3d_points(points_3d_marker, marker_positions_cm)
 
-                    # Ensure t1 and t2 are (3, 1)
-                    t1 = t1.reshape(3, 1)
-                    t2 = t2.reshape(3, 1)
+                    # 꽃봉오리(bud) class_num=1, 개화된 꽃(blossom) class_num=2, 인공수분된 꽃 class_num=3에 대해 각각 꽃 개수를 계산합니다.
+                    num_bud, unique_bud_points = count_flowers_by_distance(points_3d_marker, distance_threshold=1.0, class_num=1)
+                    num_blossom, unique_blossom_points = count_flowers_by_distance(points_3d_marker, distance_threshold=1.0, class_num=2)
+                    num_pollination, unique_pollination_points = count_flowers_by_distance(points_3d_marker, distance_threshold=1.0, class_num=3)
 
-                    P1 = camera_matrix @ np.hstack((R1, t1))
-                    P2 = camera_matrix @ np.hstack((R2, t2))
+                    print(f"꽃봉오리 개수: {num_bud}")
+                    print(f"개화된 꽃 개수: {num_blossom}")
+                    print(f"인공수분된 꽃 개수: {num_pollination}")
 
-                    # Convert object_centers to dictionaries for easy lookup
-                    centers1 = {obj_id: pos for obj_id, pos in capture1['object_centers'].items()}
-                    print("centers1 : ", centers1)
-                    centers2 = {obj_id: pos for obj_id, pos in capture2['object_centers'].items()}
-                    print("centers2 : ", centers2)
-                    # Find common object IDs
-                    common_ids = set(centers1.keys()).intersection(centers2.keys())
-
-                    if not common_ids:
-                        print("두 캡처에서 공통된 ArUco 마커가 없어 삼각측량을 수행할 수 없습니다.")
-                        captures = []
-                        capture_count = 0
-                        continue
-                    else:
-                        print(f"공통된 객체 ID: {common_ids}")
-
-                        # Triangulate 3D points for each common ID
-                        points_3d_marker = {}
-                        for obj_id in common_ids:
-                            pt1 = centers1[obj_id][0][1]
-                            pt2 = centers2[obj_id][0][1]
-                             # Log the points being triangulated
-                            print(f"Triangulating for ID {obj_id}: Capture1 (x={pt1[0]}, y={pt1[1]}), Capture2 (x={pt2[0]}, y={pt2[1]})")
-                            point_4d_hom = cv.triangulatePoints(P1, P2, np.array(pt1).reshape(2,1), np.array(pt2).reshape(2,1))
-                            point_3d = cv.convertPointsFromHomogeneous(point_4d_hom.T)[0][0]  # (x, y, z)
-                            points_3d_marker[obj_id] = point_3d
-                            
-                        # 보정 과정 추가
-                        points_3d_marker = calibrate_3d_points(points_3d_marker, marker_positions_cm)
-
-                        # Remove duplicates
-                        # points_3d_list = list(points_3d_marker.values())
-                        # unique_points = remove_duplicates(points_3d_list, distance_threshold=0.02)  # 2cm 이하인 경우 중복으로 간주
-                        unique_points = list(points_3d_marker.values())
-
-                        # Print 3D Points
-                        print("\nTriangulated 3D Points in Marker Coordinate System:")
-                        
-                        for obj_id, point in points_3d_marker.items():
-                            print("--------------------------------")
-                            print("obj_id : ", obj_id)
-                            print("point : ", point)
-                            print(f"ID: {obj_id}, 3D Point: {point}, Class: {centers1[obj_id][0][2]}")
-                            point_3d_list.append(point)
-
-                        # Count the number of unique flowers
-                        num_flowers = len(unique_points)
-                        print(f"\n꽃의 개수는 {num_flowers}개 입니다.")
-                        
-                        # Visualize 3D Points by saving to a file
-                        fig = plt.figure()
-                        ax = fig.add_subplot(111, projection='3d')
-                        for obj_id, point in points_3d_marker.items():
-                            ax.scatter(point[0], point[1], point[2], label=f'ID:{obj_id}')
-                            ax.text(point[0], point[1], point[2], f'ID:{obj_id}')
-                        ax.set_xlabel('X (cm)')
-                        ax.set_ylabel('Y (cm)')
-                        ax.set_zlabel('Z (cm)')
-                        ax.legend()
-                        plot_filename = os.path.join(save_dir, f"triangulated_3d_points_{capture_time}.png")
-                        plt.savefig(plot_filename)
-                        plt.close(fig)
-                        print(f"3D plot saved as {plot_filename}")
-
-                    # Reset captures for next triangulation
-                    captures = []
-                    capture_count = 0
-                    print("삼각측량을 완료했습니다. 다음 캡처를 위해 초기화합니다.")              
+                    
+                    print("다음 캡처를 위해 초기화합니다.")
+                    saved_frames = []
 
     except Exception as e:
         print(f"오류 발생: {e}")
@@ -564,32 +487,6 @@ def main():
         if 'cap' in locals() and cap.isOpened():
             cap.release()
             print("카메라를 해제했습니다.")
-            print("avg, std of 3D points: ")
-            values_1, values_2, values_3 = [], [], []
-            averages, std_devs = [], []
-            for i in range(3):
-                point_3d_list = np.array(point_3d_list)
-                # 3D 좌표 리스트에서 각 축별로 값을 분리하여 저장
-            for point in point_3d_list:
-                values_1.append(point[0])  # x 축 값
-                values_2.append(point[1])  # y 축 값
-                values_3.append(point[2])  # z 축 값
-            print("values_1 : ", values_1)
-            print("values_2 : ", values_2)
-            print("values_3 : ", values_3)
-            # 각 축에 대해 평균과 표준편차 계산
-            for values in [values_1, values_2, values_3]:
-                avg_value = np.mean(values)
-                std_value = np.std(values)
-                averages.append(avg_value)
-                std_devs.append(std_value)
-            print("averages : ", averages)
-            print("std_devs : ", std_devs)
-
-            # 출력
-            for i, (avg, std) in enumerate(zip(averages, std_devs)):
-                print(f"avg_{i}: {avg}, std_{i}: {std}")
-            
         cv.destroyAllWindows()
         print("모든 OpenCV 창을 닫았습니다.")
 
