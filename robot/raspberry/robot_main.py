@@ -129,7 +129,6 @@ def main():
         print(f"시리얼 포트 열기 오류: {e}")
         return
         
-
     # 스레드 생성
     frame0_thread = threading.Thread(target=send_frame, args=(central_sock, cam0))
     frame1_thread = threading.Thread(target=send_frame, args=(pollination_sock, cam1))
