@@ -40,7 +40,7 @@ def color_threshold(image):
 
     # 흰색 차선 검출
     lower_white = np.array([45, 0, 240])
-    upper_white = np.array([60, 15, 255])
+    upper_white = np.array([60, 10, 255])
     white_mask = cv2.inRange(hsv, lower_white, upper_white)
 
     # 두 마스크를 합침
@@ -78,6 +78,7 @@ right_speed = 0
 # 이전 프레임의 차선 무게중심 좌표 저장 변수 초기화
 prev_left_center_x = None
 prev_right_center_x = None
+arco_maker_detect = False
 
 # ARUCO marker의 크기와 초점 거리 (1)
 focal_length = mtx[0, 0]
@@ -103,7 +104,7 @@ def draw_text(img, text, position, font=cv2.FONT_HERSHEY_SIMPLEX,
     cv2.putText(img, text, (x, y + text_height), font, scale, color, thickness, cv2.LINE_AA)
 
 def handle_client(rpi_conn):
-    global left_speed, right_speed
+    global left_speed, right_speed, arco_maker_detect 
     global prev_left_center_x, prev_right_center_x
     try:
         while True:
@@ -144,6 +145,7 @@ def handle_client(rpi_conn):
                 
                 # ARUCO marker가 검출되면 (5)
                 if marker_corners:
+                    arco_maker_detect = True
                     total_markers = range(0, marker_IDs.size)
                     for ids, corners, i in zip(marker_IDs, marker_corners, total_markers):
                         # Draw marker boundaries
@@ -227,10 +229,15 @@ def handle_client(rpi_conn):
                         right_center_x = None
                         right_center_y = None
 
+                    if arco_maker_detect and ids[0] == 1:
+                        left_speed = 5
+                        right_speed = 43 
+                        arco_maker_detect = False 
+
                     # 두 차선의 무게중심 간의 거리 계산
                     if left_center_x is not None and right_center_x is not None:
                         lane_distance = abs(right_center_x - left_center_x)
-                        lane_distance_threshold = 52  # 임계값 설정 (실험을 통해 조절 필요)
+                        lane_distance_threshold = 100  # 임계값 설정 (실험을 통해 조절 필요)
 
                         # 차선 너비를 영상에 표시 (픽셀 단위)
                         cv2.putText(undist_frame, f"Lane Width: {lane_distance}px", (50, 50),
@@ -246,13 +253,13 @@ def handle_client(rpi_conn):
                                 if abs(left_center_x - prev_left_center_x) < abs(left_center_x - prev_right_center_x):
                                     # 오른쪽 차선이 사라진 것으로 판단하고 오른쪽으로 회전
                                     print("오른쪽 차선이 사라졌습니다. 오른쪽으로 회전합니다.")
-                                    left_speed = 47  # 왼쪽 바퀴 속도
+                                    left_speed = 43  # 왼쪽 바퀴 속도
                                     right_speed = 5  # 오른쪽 바퀴 속도
                                 else:
                                     # 왼쪽 차선이 사라진 것으로 판단하고 왼쪽으로 회전
                                     print("왼쪽 차선이 사라졌습니다. 왼쪽으로 회전합니다.")
                                     left_speed = 5  # 왼쪽 바퀴 속도
-                                    right_speed = 47  # 오른쪽 바퀴 속도
+                                    right_speed = 43  # 오른쪽 바퀴 속도
                             else:
                                 # 이전 프레임의 정보가 없는 경우 기본 동작 설정
                                 print("차선 정보가 부족하여 기본 동작을 수행합니다.")
@@ -290,15 +297,15 @@ def handle_client(rpi_conn):
                                 # 왼쪽 차선이 사라지고 오른쪽 차선만 남은 것으로 판단
                                 print("왼쪽 차선이 사라졌습니다. 왼쪽으로 회전합니다.")
                                 left_speed = 5  # 왼쪽 바퀴 속도
-                                right_speed = 47  # 오른쪽 바퀴 속도
+                                right_speed = 43  # 오른쪽 바퀴 속도
                             else:
                                 print("오른쪽 차선이 사라졌습니다. 오른쪽으로 회전합니다.")
-                                left_speed = 47  # 왼쪽 바퀴 속도
+                                left_speed = 43  # 왼쪽 바퀴 속도
                                 right_speed = 5  # 오른쪽 바퀴 속도
                         else:
                             # 이전 오른쪽 차선 정보가 없을 때 기본적으로 오른쪽으로 회전
                             print("오른쪽 차선이 사라졌습니다. 오른쪽으로 회전합니다.")
-                            left_speed = 47
+                            left_speed = 43
                             right_speed = 5
                     elif left_center_x is None and right_center_x is not None:
                         # 왼쪽 차선이 사라진 경우
@@ -381,7 +388,7 @@ if __name__ == "__main__" :
 
     # 서버 설정
     server_ip = "192.168.0.147"
-    rpi_server_port = 3141
+    rpi_server_port = 3140
 
     rpi_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     rpi_server_socket.bind((server_ip, rpi_server_port))
