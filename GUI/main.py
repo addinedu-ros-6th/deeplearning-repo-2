@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QSizePolicy, QMenu, QLabel, QWidgetAction, QSpacerItem, QTableWidget, QTableWidgetItem, QScrollArea, QPushButton
 from PyQt5.QtChart import QChartView, QChart, QPieSeries, QPieSlice, QBarSet, QBarSeries, QBarCategoryAxis, QValueAxis
-from PyQt5.QtGui import QColor, QPainter, QFont, QPixmap
+from PyQt5.QtGui import QColor, QPainter, QFont, QPixmap, QBrush
 from PyQt5.QtCore import Qt, QEvent, QTimer, QMargins, QTime, pyqtSignal, QThread
 from pyqtgraph import PlotWidget, mkPen, BarGraphItem
 from qtwidgets import AnimatedToggle
@@ -13,10 +13,9 @@ import requests
 import socket
 import webbrowser
 from datetime import datetime
-import resources  # loading resources
+import resources  # needed for loading resources
 
 class MessageReceiver(QThread):
-    # 메시지를 받으면 시그널로 보내기
     received = pyqtSignal(bytes)
 
     def __init__(self, sock):
@@ -32,12 +31,12 @@ class MessageReceiver(QThread):
                     header += self.sock.recv(2 - len(header))
 
                 if header == b'RS':
-                    raw_data = self.sock.recv(2)
-                    print(f"receive raw data: {raw_data}")
-                    data= int.from_bytes(data[:1], byteorder="big")
-                    print(f"real data : {data}")
+                    data = self.sock.recv(2)
+                    print(f"receive raw data: {data}")
+                    datan= int.from_bytes(data[:1], byteorder="big")
+                    print(f"real data : {datan}")
 
-                    self.received.emit(raw_data)
+                    self.received.emit(data)
         except Exception as e:
             print(f"메시지 수신 오류: {e}")
 
@@ -64,7 +63,7 @@ class OrchardGUI(QMainWindow):
         self.add_pie_chart()
         self.create_dynamic_plot()
 
-        self.api_key = '727250f5a30e68d3bc3896624421ddab'
+        self.api_key = #INPUT_API_KEY
         self.get_weather_data()
 
         self.wholesaler_price_btn.clicked.connect(self.open_webbrowser)
@@ -84,9 +83,6 @@ class OrchardGUI(QMainWindow):
 
         # Setup hover menu for tree icons and update labels periodically
         self.tree_labels()
-        self.update_timer = QTimer(self)
-        self.update_timer.timeout.connect(self.tree_labels)
-        self.update_timer.start(10000)  # 10 seconds interval
 
         self.tree1_icon.installEventFilter(self)
         self.tree2_icon.installEventFilter(self)
@@ -102,16 +98,16 @@ class OrchardGUI(QMainWindow):
         self.display_log()
 
         # set up TCP socket
-        # self.server_ip = "192.168.0.134"
-        # self.server_port = 1234
+        self.server_ip = "192.168.0.134"
+        self.server_port = 1234
 
-        # self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # self.sock.connect((self.server_ip, self.server_port))  
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.connect((self.server_ip, self.server_port))  
 
-        # self.scanstart_btn.clicked.connect(self.send_robotControl)
-        # self.receiver_thread = MessageReceiver(self.sock)
-        # self.receiver_thread.received.connect(self.process_received_message)
-        # self.receiver_thread.start()
+        self.scanstart_btn.clicked.connect(self.send_robotControl)
+        self.receiver_thread = MessageReceiver(self.sock)
+        self.receiver_thread.received.connect(self.process_received_message)
+        self.receiver_thread.start()
 
         # -------------------------------------------------------------------------
         # set schedule settings page 4
@@ -129,6 +125,13 @@ class OrchardGUI(QMainWindow):
 
     def switch_to_settings(self):
         self.stackedWidget.setCurrentIndex(3)
+
+    def init_timers(self, function, interval):
+        # Create a single QTimer for updating multiple components
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(function)
+        self.timer.start(interval) 
+
 
     # -------------------------------------------------------------------------------------------------------------------------------
     # main dashboard (page 1)
@@ -170,15 +173,15 @@ class OrchardGUI(QMainWindow):
         self.plot_graph.setLabel("bottom", "일별", **styles)
         self.plot_graph.addLegend()
         self.plot_graph.showGrid(x=True, y=True)
-        self.plot_graph.setYRange(20, 40)
+        self.plot_graph.setYRange(0, 40)
 
         # Sample data for plotting
         self.time = list(range(10))
-        self.temperature = [randint(20, 40) for _ in range(10)]
+        self.count = [randint(20, 40) for _ in range(10)]
         
         # Create the plot with customized line and symbol colors
         self.line = self.plot_graph.plot(
-            self.time, self.temperature,
+            self.time, self.count,
             pen=pen,  # Blue line with thickness 2
             symbol='o',  # Use circle symbol
             symbolSize=6,  # Symbol size
@@ -186,26 +189,22 @@ class OrchardGUI(QMainWindow):
             symbolPen=mkPen("#6e6053")  # Outline color for symbols
         )
 
-        # Timer for updating the plot dynamically
-        self.timer = QTimer()
-        # self.timer.setInterval(1000)
-        self.timer.timeout.connect(self.update_dynamic_plot)
-        self.timer.start(1000)
-
         # Set layout for the groupbox
         layout = QVBoxLayout()
         layout.addWidget(self.plot_graph)
         self.linechart_area.setLayout(layout)
+
+        self.init_timers(self.update_dynamic_plot, 1000)
 
 
     def update_dynamic_plot(self):
         self.time = self.time[1:]
         self.time.append(self.time[-1] + 1)
 
-        self.temperature = self.temperature[1:]
-        self.temperature.append(randint(20, 40))
+        self.count = self.count[1:]
+        self.count.append(randint(20, 40))
 
-        self.line.setData(self.time, self.temperature)
+        self.line.setData(self.time, self.count)
 
     def add_pie_chart(self):
         datas = [
@@ -261,9 +260,7 @@ class OrchardGUI(QMainWindow):
         layout.addWidget(chart_view, alignment=Qt.AlignCenter)  # Align the chart to the center
         self.piechart_groupbox.setLayout(layout)
 
-        timer = QTimer(self)
-        timer.timeout.connect(self.add_pie_chart)  # Call the update function
-        timer.start(86400000)  # 24 hours in milliseconds
+        self.init_timers(self.add_pie_chart, 86400000)
 
     def get_weather_data(self):
         try:
@@ -314,19 +311,41 @@ class OrchardGUI(QMainWindow):
         except Exception as e:
             self.weather_label.setText(f"Failed to fetch weather data: {str(e)}")
         
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.get_weather_data)
-        self.timer.start(60000) # update every 1 min (60 seconds)
+        self.init_timers(self.get_weather_data, 30000)
+
+        print("updating weather")
 
         self.datetime.setText(f"""
                 <p style="font-size: 14px; text-align: center; font-weight: bold; margin: 2px; ">
                 {current_year}년 {current_month}월 {current_date}일    {current_hour}:{current_minute}</p>""")
-        text_layout = QVBoxLayout()
-        text_layout.addWidget(self.weather_label)  # Add the weather text label below the icon
-        self.text_widget.setLayout(text_layout)
-        icon_layout = QVBoxLayout()
-        icon_layout.addWidget(self.weather_icon)  # Add the icon label first
-        self.icon_widget.setLayout(icon_layout)
+        
+        # 30초에 한번씩 날씨 업데이트 받게 되면 이미 존재하는 layout에 덮어씌운다고 경고문이 뜸으로 예외처리 필요.
+        if self.text_widget.layout() is not None:
+            text_layout = self.text_widget.layout()
+            while text_layout.count():
+                item = text_layout.takeAt(0)
+                widget = item.widget()
+                # if widget is not None:
+                #     widget.deleteLater()
+
+        if self.text_widget.layout() is None:
+            text_layout = QVBoxLayout()
+            text_layout.addWidget(self.weather_label)
+            self.text_widget.setLayout(text_layout)
+
+        if self.icon_widget.layout() is not None:
+            icon_layout = self.icon_widget.layout()
+            while icon_layout.count():
+                item = icon_layout.takeAt(0)
+                widget = item.widget()
+                # if widget is not None:
+                #     widget.deleteLater()
+
+        if self.icon_widget.layout() is None:
+            icon_layout = QVBoxLayout()
+            icon_layout.addWidget(self.weather_icon)
+            self.icon_widget.setLayout(icon_layout)
+
 
     def open_webbrowser(self):
         button = self.sender()  # Get the button that was clicked
@@ -374,10 +393,13 @@ class OrchardGUI(QMainWindow):
             else:
                 label.setText(f"{round(self.percentage)}%")
                 label.setStyleSheet("background-color: #cb4343;")
+        
+        self.init_timers(self.tree_labels, 10000)
 
 
     def eventFilter(self, source, event):
-        # Event filtering logic to handle hover events on tree icons
+        combined_results = self.retrieve_from_database()  # Get the tree data from the database
+
         if event.type() == QEvent.Enter:
             if source == self.tree1_icon:
                 tree_no = 1
@@ -386,27 +408,39 @@ class OrchardGUI(QMainWindow):
             else:
                 return super().eventFilter(source, event)
 
-            # Simulate placeholder values, will be updated after DB integration
-            x_axis = 10 * tree_no
-            y_axis = 40 
-            plant_date = "2014-01-10"
-            update_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # Find the correct data for the hovered tree
+            tree_data = next((tree for tree in combined_results if tree[0] == tree_no), None)
 
-            label_text = f"""
-                <p style="font-size: 17px; font-weight: bold;">사과나무 정보</p>
-                <p>꽃 개화 상태: {self.pollination}/{self.total}</p>
-                <p>나무 식별번호: {tree_no}</p>
-                <p>나무 위치: ({x_axis}, {y_axis})</p>
-                <p>심은 일자: {plant_date}</p>
-                <p style="font-size: 9px; text-align: right;">마지막 업데이트: {update_date}</p>
-            """
-            self.menu_label.setText(label_text)
-            self.menu_label.setFont(QFont("NanumSquareRound ExtraBold"))
-            self.menu.setStyleSheet("QMenu { background-color: rgb(255, 248, 239);}")
-            self.menu.exec_(source.mapToGlobal(source.rect().bottomLeft()))
+            if tree_data:
+                tree_id = tree_data[0]
+                x_axis = tree_data[1]
+                y_axis = tree_data[2]
+                flower_count = tree_data[3]
+                bud_count = tree_data[4]
+                pollination_count = tree_data[5]
+                season = tree_data[6]
+                plant_date = tree_data[7]
+                update_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                label_text = f"""
+                    <p style="font-size: 17px; font-weight: bold;">사과나무 정보</p>
+                    <p>꽃 개화 상태: {flower_count}/{flower_count + bud_count + pollination_count}</p>
+                    <p>나무 식별번호: {tree_id}</p>
+                    <p>나무 위치: ({x_axis}, {y_axis})</p>
+                    <p>심은 일자: {plant_date}</p>
+                    <p>시즌: {season}</p>
+                    <p style="font-size: 9px; text-align: right;">마지막 업데이트: {update_date}</p>
+                """
+
+                self.menu_label.setText(label_text)
+                self.menu_label.setFont(QFont("NanumSquareRound ExtraBold"))
+                self.menu.exec_(source.mapToGlobal(source.rect().bottomLeft()))
+
         elif event.type() == QEvent.Leave:
             self.menu.hide()
+
         return super().eventFilter(source, event)
+
     
     def pollination_rate(self):
         self.pollination += 5  # Update this as needed
@@ -468,7 +502,6 @@ class OrchardGUI(QMainWindow):
                         border-radius: 2px;
                     }
                 """)
-            bar.repaint()
 
     def send_robotControl(self):
         command = 1
@@ -485,9 +518,10 @@ class OrchardGUI(QMainWindow):
     def process_received_message(self, data):
         print(f"received message: {data}")
         if int.from_bytes(data[:1], byteorder="big") == 0:
-            self.scanstart_btn.setEnabled(True)
-            button = self.scanstart_btn
-            button.setStyleSheet("""
+
+            self.scanstart_btn.setEnabled(True) # set the 로봇 스캔시작 button to be ON
+            # if error occurs, comment the bottom
+            self.scanstart_btn.setStyleSheet("""
                 QPushButton {
                     color: rgb(255, 255, 255);
                     background-color: rgb(167, 153, 139);
@@ -508,25 +542,19 @@ class OrchardGUI(QMainWindow):
         
         # create horizontal list i.e x-axis
         x = [1, 2]  # Mapping "인공수분 완료" to 1 and "인공수분 미완료" to 2
-        labels = {1: "인공수분 완료", 2: "인공수분 미완료"}  # Mapping positions to labels
+        labels = {1: "수분 완료", 2: "수분 미완료"}  # Mapping positions to labels
 
         bargraph = BarGraphItem(x = x, height = y1, width = 0.6, brush ='#6e6053')
         plot = pyqtgraph.plot()
         plot.addItem(bargraph)
-
         plot.setBackground('#ede3d6') 
-        font = pyqtgraph.QtGui.QFont()
-        font.setPointSize(12)
 
-        # Set labels for axes with custom font and color
         x_axis = plot.getAxis('bottom')
         x_axis.setTicks([list(labels.items())])  # x-axis label
-        # tick_font = pyqtgraph.QtGui.QFont("NanumSquareRound ", 10)  # Set desired font and size
-        #x_axis.setLabelBrush(pyqtgraph.mkBrush('black'))  # Set label color for the axis
-        x_axis.setStyle(tickFont=pyqtgraph.QtGui.QFont("NanumSquareRound ", 9))  # Set font and color for x-ticks
+        x_axis.setStyle(tickFont=pyqtgraph.QtGui.QFont("NanumSquareRound", 9, QFont.Bold))  # Set font and color for x-ticks
+        x_axis.setTextPen(pyqtgraph.mkPen('black'))  # Set tick label color
 
-
-        styles = {"color": "black", "font-size": "11px", "font": "NanumSquareRound ExtraBold"}
+        styles = {"color": "black", "font-size": "12px", "font": "NanumSquareRound ExtraBold"}
         plot.getAxis('bottom').setLabel('인공 수분', **styles)  # x-axis label
         plot.getAxis('left').setLabel('나무 개수', **styles)  # y-axis label
 
@@ -560,7 +588,6 @@ class OrchardGUI(QMainWindow):
             chart.setAnimationOptions(QChart.SeriesAnimations)
             chart.legend().setAlignment(Qt.AlignRight)
             chart.legend().setVisible(True)  # Show the legend
-            #chart.legend().hide()
 
             # Customize the axes
             categories = ["Jun", "July", "Aug", "Sep"]
@@ -602,9 +629,9 @@ class OrchardGUI(QMainWindow):
         self.logchart_table = QTableWidget()
         
         self.logchart_table.setRowCount(len(combined_results))  # Set rows based on the number of combined results
-        self.logchart_table.setColumnCount(7)  # Set columns based on the combined fields: (Tree.id, location, planting_date, flower_count, bud_count, pollination_count, season)
+        self.logchart_table.setColumnCount(8)  # Set columns based on the combined fields: (Tree.id, location, planting_date, flower_count, bud_count, pollination_count, season)
 
-        self.logchart_table.setHorizontalHeaderLabels(['Tree ID', 'Location', 'Flower Count', 'Bud Count', 'Pollination Count', 'Season', 'Planting Date'])
+        self.logchart_table.setHorizontalHeaderLabels(['Tree ID', 'X Coordinate', 'Z Coordinate', 'Flower Count', 'Bud Count', 'Pollination Count', 'Season', 'Planting Date'])
         self.logchart_table.resizeColumnsToContents()
         self.logchart_table.setFixedWidth(800)
         #self.logchart_table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
@@ -612,11 +639,14 @@ class OrchardGUI(QMainWindow):
         for i, row in enumerate(combined_results):
             for j, data in enumerate(row):
                 self.logchart_table.setItem(i, j, QTableWidgetItem(str(data)))
+                self.logchart_table.setStyleSheet("QTableView::item:selected { color:white; background:#716352; font-weight:900; }"
+                           "QTableCornerButton::section { background-color:#746858; }"
+                           "QHeaderView::section { color:white; background-color:#746858; }")
 
         layout = QVBoxLayout()
         layout.addWidget(self.logchart_table, alignment=Qt.AlignCenter)
         self.logchart_groupBox.setLayout(layout)
-        layout.setContentsMargins(80, 20, 20, 20)  # Adjust margins as necessary
+        layout.setContentsMargins(20, 20, 20, 20)  # Adjust margins as necessary
         #layout.setSpacing(10)  # Adjust spacing between elements if needed
 
     # ------------------------------------------------------------------------------------------------------------------------
@@ -636,14 +666,13 @@ class OrchardGUI(QMainWindow):
             selected_start_time = date.dateTime()
             selected_end_time = selected_start_time.addSecs(30 * 60) # 30*60 = 1800 seconds, 30 mins
             
-            selected_start_str = selected_start_time.toString("HH:mm")
+            self.selected_start_str = selected_start_time.toString("HH:mm")
             selected_end_str = selected_end_time.toString("HH:mm")
-            self.send_to_database(selected_start_str, selected_end_str) #send scheduled time to db
-            print(f"{toggle_name} sent to DB with {selected_start_str}, {selected_end_str}")
-            
-            self.schedule_timer = QTimer(self)
-            self.schedule_timer.timeout.connect(self.send_to_central_server(selected_end_str))
-            self.schedule_timer.start(5000)  # 5초마다 타이머가 동작
+            self.send_to_database(self.selected_start_str, selected_end_str) #send scheduled time to db
+            print(f"{toggle_name} sent to DB with {self.selected_start_str}, {selected_end_str}")
+
+            self.send_to_central_server()
+
             print(f"{toggle_name} requested to send motor control to Central Server at {selected_end_str}")
 
     def onoff_schedule(self):
@@ -665,17 +694,17 @@ class OrchardGUI(QMainWindow):
         schedule2_toggle.stateChanged.connect(lambda: self.on_toggle_state_change(schedule2_toggle, 'Schedule 2'))
         schedule3_toggle.stateChanged.connect(lambda: self.on_toggle_state_change(schedule3_toggle, 'Schedule 3'))
 
-        sche1_layout = QVBoxLayout(self.schedule1_toggle)  # Assuming pollibot_toggle is a QLabel
+        sche1_layout = QVBoxLayout(self.schedule1_toggle)
         sche1_layout.addWidget(schedule1_toggle)
-        sche1_layout.setAlignment(Qt.AlignCenter)  # Align the toggle button to the center
+        sche1_layout.setAlignment(Qt.AlignCenter)
 
-        sche2_layout = QVBoxLayout(self.schedule2_toggle)  # Assuming monibot_toggle is a QLabel
+        sche2_layout = QVBoxLayout(self.schedule2_toggle) 
         sche2_layout.addWidget(schedule2_toggle)
-        sche2_layout.setAlignment(Qt.AlignCenter)  # Align the toggle button to the center
+        sche2_layout.setAlignment(Qt.AlignCenter)
 
-        sche3_layout = QVBoxLayout(self.schedule3_toggle)  # Assuming monibot_toggle is a QLabel
+        sche3_layout = QVBoxLayout(self.schedule3_toggle)
         sche3_layout.addWidget(schedule3_toggle)
-        sche3_layout.setAlignment(Qt.AlignCenter)  # Align the toggle button to the center
+        sche3_layout.setAlignment(Qt.AlignCenter)
 
 
         sche1_layout.setContentsMargins(0, 0, 0, 0)
@@ -686,20 +715,16 @@ class OrchardGUI(QMainWindow):
     # communication with central server & DB
     # ------------------------------------------------------------------------------------------------------------------------
 
-    def send_to_central_server(self, selected_time):
+    def send_to_central_server(self):
         try:
             current_time = QTime.currentTime().toString("HH:mm")
-            if current_time >= selected_time:
-                # Replace with your server IP and port
-                server_ip = '192.168.1.134'
-                server_port = 1234 #server <-> GUI port
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.connect((server_ip, server_port))
-                    message = f"SS{selected_time}"
-                    s.sendall(message.encode('utf-8'))
-                    print(f"Time sent to server: {selected_time}")
+            if current_time >= self.selected_start_str:
+                    schedule_time = self.selected_start_str.encode('utf-8')
+                    print(len(schedule_time))
+                    self.sock.sendall(b'SS' + schedule_time + b'\n')
+                    print(f"Time sent to server: raw-{self.selected_start_str} packet-{schedule_time}")
         except Exception as e:
-            print(f"Error in TCP/IP communication: {e}")
+            print(f"Error in communication: {e}")
 
     # send data to TaskSchedule table on MySQL database
     def send_to_database(self, start_time, end_time):
@@ -716,12 +741,12 @@ class OrchardGUI(QMainWindow):
             print(f"Connection Success")
             
             # Insert or update query based on your table structure
-            query = f"INSERT INTO TaskSchedule (id, start, end, robot_id) VALUES (1, {start_time}, {end_time}, 1)"
+            query = f"INSERT INTO TaskSchedule (start, end, robot_id) VALUES ('{start_time}', '{end_time}', 1)"
             cursor.execute(query)
             connection.commit()
             print(f"Time sent to database: {start_time}, {end_time}")
         except mysql.connector.Error as err:
-            print(f"Error in MySQL connection: {err}")
+            print(f"Error in DB connection: {err}")
         finally:
             if connection.is_connected():
                 cursor.close()
@@ -741,27 +766,28 @@ class OrchardGUI(QMainWindow):
                 database='AppleCareDB'
             )
             cursor = connection.cursor()
-            print(f"Connection Success")
+            print(f"DB Connection Success")
 
-            cursor.execute("SELECT id, location, planting_date FROM Tree")
+            cursor.execute("SELECT id, ST_X(location) AS x_coordinate, ST_Y(location) AS y_coordinate, planting_date FROM Tree")
             Tree_result = cursor.fetchall()
-            print(f"Recieved tables from DB: Tree")
+            #print(f"Recieved row from DB: Tree")
 
             cursor.execute("SELECT id, tree_id, flower_count, bud_count, pollination_count, season FROM TreeCurrentStatus")
             TreeCurrentStatus_result = cursor.fetchall()
-            print(f"Recieved tables from DB: TreeCurrentStatus")
+            #print(f"Recieved row from DB: TreeCurrentStatus")
 
             for tree in Tree_result:
                 for status in TreeCurrentStatus_result:
                     if tree[0] == status[1]:
                         combined_results.append((
                             tree[0], # tree_id
-                            tree[1], # location
+                            tree[1], # location x_coordinate
+                            tree[2], # location y_coordinate
                             status[2], # flower_count
                             status[3], # bud_count
                             status[4], # pollination_count
                             status[5], # season
-                            tree[2] #planting_date
+                            tree[3] #planting_date
                         ))
 
             connection.commit()
@@ -771,7 +797,7 @@ class OrchardGUI(QMainWindow):
             if connection.is_connected():
                 cursor.close()
                 connection.close()
-                print(f"Connection closed")
+                print(f"DB Connection closed")
         return combined_results
 
 if __name__ == "__main__":
