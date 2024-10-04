@@ -3,7 +3,7 @@ import numpy as np
 from ultralytics import YOLO
 
 # central server ip, port
-central_server_ip = "192.168.0.134"
+central_server_ip = "192.168.0.23"
 central_server_port = 4040
 
 central_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -14,7 +14,7 @@ except Exception as e:
     print(f"{central_server_ip}:{central_server_port} 서버 연결 오류")
     central_server_socket = None
 
-model = YOLO("/home/leesiwon/Desktop/best.pt")
+model = YOLO("/home/jh/project/deeplearning_project/deeplearning-repo-2/obstacle_server/best.pt")
 
 try:
     while True:
