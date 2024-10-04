@@ -40,19 +40,14 @@
 
 ### 시스템 설계
 - 시스템 구성도
-  
-  ![new_new_system](https://github.com/user-attachments/assets/ad7cc2df-2375-426c-b0eb-918d9c39370e)
-
+- ?
 ### 주요 시나리오
 - 상황 발생 시나리오 시퀀스 다이어그램
-  
-  ![oos](https://github.com/user-attachments/assets/d62810d8-2872-45fe-81cd-16cfd23f0ac1)
-- 카메라 수동 조작 시나리오 시퀀스 다이어그램
-  
-  ![mcc](https://github.com/user-attachments/assets/2d4225d5-a298-42d8-954a-15847a62b453)
+  ?
+- 카메라 수동 조작 시나리오 시퀀스 다이어그램 
+?
 - 상황 종료 시나리오 시퀀스 다이어그램
-  
-  ![eos](https://github.com/user-attachments/assets/feb24d92-f50c-4022-bae6-eff1a0478d4f)
+?
 
 ## 기능 및 기술 구현
 ### 과수원 및 인공수분 모니터링을 위한 도로 주행
@@ -232,13 +227,10 @@
 
 
 ### GUI 설계
-![GUI](https://github.com/user-attachments/assets/073fa5ec-52f0-416e-82fb-5e6495403e87)
-
-### Database 설계
-- ERD
+- ?
   
-![ERD](https://github.com/user-attachments/assets/62bd0db8-d9f0-49f1-8322-5d19a0c60a02)
+### Database 설계
+- ?
 
 ## 시현 영상
-[![Watch the video](https://github.com/user-attachments/assets/64dde2a7-0494-4401-9b6e-c69f5848bcb0)](https://drive.google.com/file/d/1hy1FeOyQ_F7rgvRvqLCTZ0Ngx3BC0v6t/view?usp=drive_link)
-- 센서가 순차적으로 가스 누출 감지, 불꽃 감지 이후 자동으로 상황 발령, 관리자가 허가된 카드를 RFID 모듈을 태그하며 상황 종료
+- ?
