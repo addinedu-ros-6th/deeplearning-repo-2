@@ -3,8 +3,8 @@ import numpy as np
 import socket
 import struct
 import time
+from datetime import datetime, timedelta
 from threading import Thread
-from concurrent.futures import ThreadPoolExecutor as executor
 
 # Sobel 연산을 통한 x 또는 y 방향 경계 계산 함수
 def abs_sobel_thresh(img, orient='x', thresh_min=25, thresh_max=255):
@@ -213,6 +213,42 @@ def handle_client(rpi_conn, obs_conn):
                 else:
                     print("status", status)
 
+            # status data
+            elif header == b'SS':
+                schedule_data = b''
+                while len(schedule_data) < 1:
+                    packet = rpi_conn.recv(1 - len(schedule_data))
+                    if not packet:
+                        break
+                    schedule_data += packet
+
+                rpi_conn.recv(1)  # \n 받기
+
+                schedule_time = schedule_data.decode('utf-8')
+                print(f"time scheduled at {schedule_time}")
+                
+                schedule_time_str = datetime.strptime(schedule_time, "%H:%M")
+                while True:
+                    current_time = datetime.now()
+                    time_difference = (schedule_time - current_time).total_seconds()
+                    if time_difference <= 0:
+                        print("Scheduled time reached! send motor value")
+                        break
+                    if time_difference > 60:
+                        sleep_duration = min(time_difference / 2, 600)  # Sleep for half the remaining time or a maximum of 10 minutes
+                    else:
+                        sleep_duration = time_difference  # If less than 60 seconds, sleep for the remaining time
+
+                    print(f"Sleeping for {sleep_duration} seconds. Time until scheduled event: {time_difference} seconds")
+                    time.sleep(sleep_duration)
+
+                    if current_time > schedule_time:
+                        # Send motor values to Raspberry Pi (robot)
+                        schedule_time += timedelta(days=1)
+                    elif current_time == schedule_time:
+                        send_motor_value()
+
+
     except Exception as e:
         print(f"Error receiving or displaying frame: {e}")
 
@@ -244,11 +280,11 @@ def flower_detect_information(pollination_conn):
             if robot_state == 0:
                 continue
             header = b''
-            while len(header) < 1:
-                header += pollination_conn.recv(1 - len(header))
+            while len(header) < 2:
+                header += pollination_conn.recv(2 - len(header))
 
             # detect data
-            if int.from_bytes(header, byteorder="big") == 22:
+            if header == b"TS":
                 size_data = b''
                 print("get in header pollination")
                 while len(size_data) < 2:

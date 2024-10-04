@@ -82,9 +82,9 @@ def receive_motor(sock_central, ser):
                 right_value = int.from_bytes(data[1:2], byteorder="big")
 
                 print(f"수신된 모터 값: 왼쪽={left_value}, 오른쪽={right_value}")
-                start = 60
+                start = b"MC"
 
-                ser.write(start.to_bytes(1, byteorder="big" ) + data)
+                ser.write(start + data)
                 print(f"아두이노로 전송: {data}")
 
             elif header == b'RC':
@@ -147,9 +147,9 @@ def main():
         status_thread.join()
         motor_command_thread.join()
     except KeyboardInterrupt:
-        start = 50
+        start = b"MC"
         motor_value = 0
-        send_data = start.to_bytes(1, byteorder="big") + motor_value.to_bytes(1, byteorder="big")*2 + b'\n'
+        send_data = start + motor_value.to_bytes(1, byteorder="big")*2 + b'\n'
         ser.write(send_data)
         print(f"send arduino : {send_data}")
         print("사용자에 의해 중단되었습니다.")

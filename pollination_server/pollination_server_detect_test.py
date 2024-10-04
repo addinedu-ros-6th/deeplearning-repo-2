@@ -61,13 +61,13 @@ try:
             class_len = len(detection_data)
 
             if class_len > 0:
-                start = 22
+                start = b"TS"
                 data = b''
                 for i in detection_data:
                     for j in i:
                         data += j.to_bytes(2, byteorder="big")
                 data_len = len(data)
-                send_data = start.to_bytes(1, byteorder="big") + data_len.to_bytes(2, byteorder="big") + data + b'\n'
+                send_data = start + data_len.to_bytes(2, byteorder="big") + data + b'\n'
                 central_server_socket.sendall(send_data)
                 print(f"send box data to central: {data}")
 
