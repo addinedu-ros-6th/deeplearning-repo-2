@@ -317,6 +317,42 @@ def flower_detect_information(pollination_conn):
     except Exception as e:
         print(f"Error receiving pollination data: {e}")
 
+# def flower_detect_information(pollination_conn):
+#     try:
+#         while True:
+#             # 4바이트 패킷 수신: 2바이트 헤더 + 1바이트 상태 + 1바이트 '\n'
+#             data = pollination_conn.recv(4)
+#             if not data or len(data) < 4:
+#                 print("클라이언트 연결이 끊어졌습니다.")
+#                 break
+#             # 데이터 분리: 헤더(2바이트), 상태(1바이트), \n(1바이트)
+#             header, status_data, _ = data[:2], data[2], data[3]
+#             status = int.from_bytes(bytes([status_data]), byteorder="big")
+
+#             # 'AD' ArUco Detection 상태에 따른 처리
+#             if header == b'AD':
+#                 # if not status_data:
+#                 #     break
+#                 if status == 1:
+#                     print("ArUco Marker 감지     (AD 1)")
+#                 else:
+#                     print("No ArUco Marker       (AD 0)")
+
+#             # 'TS' 나무 스캔 상태에 따른 처리
+#             elif header == b'TS':
+#                 if status == 1:
+#                     print("나무 스캔 시작        (TS 1)")
+#                 else:
+#                     print("나무 스캔 종료        (TS 0)")
+#             else:
+#                 print(f"알 수 없는 헤더: {header}")
+
+#     except Exception as e:
+#         print(f"에러 발생: {e}")
+#     finally:
+#         pollination_conn.close()
+#         print("pollination_conn 클라이언트 연결을 종료합니다.")
+
 def get_robot_state(gui_conn, rpi_conn):
     global robot_state
     try:
