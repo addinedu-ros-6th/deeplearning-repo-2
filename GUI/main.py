@@ -1,4 +1,6 @@
+import os
 import sys
+import json
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QSizePolicy, QMenu, QLabel, QWidgetAction, QSpacerItem, QTableWidget, QTableWidgetItem, QScrollArea, QPushButton
 from PyQt5.QtChart import QChartView, QChart, QPieSeries, QPieSlice, QBarSet, QBarSeries, QBarCategoryAxis, QValueAxis
 from PyQt5.QtGui import QColor, QPainter, QFont, QPixmap, QBrush
@@ -63,7 +65,7 @@ class OrchardGUI(QMainWindow):
         self.add_pie_chart()
         self.create_dynamic_plot()
 
-        self.api_key = #INPUT_API_KEY
+        self.api_key = '727250f5a30e68d3bc3896624421ddab'
         self.get_weather_data()
 
         self.wholesaler_price_btn.clicked.connect(self.open_webbrowser)
@@ -98,16 +100,16 @@ class OrchardGUI(QMainWindow):
         self.display_log()
 
         # set up TCP socket
-        self.server_ip = "192.168.0.134"
-        self.server_port = 1234
+        # self.server_ip = "192.168.0.134"
+        # self.server_port = 1235
 
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((self.server_ip, self.server_port))  
+        # self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # self.sock.connect((self.server_ip, self.server_port))  
 
-        self.scanstart_btn.clicked.connect(self.send_robotControl)
-        self.receiver_thread = MessageReceiver(self.sock)
-        self.receiver_thread.received.connect(self.process_received_message)
-        self.receiver_thread.start()
+        # self.scanstart_btn.clicked.connect(self.send_robotControl)
+        # self.receiver_thread = MessageReceiver(self.sock)
+        # self.receiver_thread.received.connect(self.process_received_message)
+        # self.receiver_thread.start()
 
         # -------------------------------------------------------------------------
         # set schedule settings page 4
@@ -653,29 +655,69 @@ class OrchardGUI(QMainWindow):
     # set schedule settings page 4
     # ------------------------------------------------------------------------------------------------------------------------
 
+
+    def save_toggle_state(self, toggle_name, toggle_state):
+        state_file = "toggle_states.json"
+        if os.path.exists(state_file):
+            with open(state_file, "r") as file:
+                toggle_states = json.load(file)
+        else:
+            toggle_states = {}
+
+        if toggle_state == 0:
+            toggle_states[toggle_name] = True
+        elif toggle_state == 1:
+            toggle_states[toggle_name] = False
+
+        with open(state_file, "w") as file:
+            json.dump(toggle_states, file)
+
     def on_toggle_state_change(self, toggle, toggle_name):
         if toggle.isChecked(): # If the toggle is turned on
+            toggle_state = 0 #turned on
+            self.save_toggle_state(toggle_name, toggle_state)
             if toggle_name == 'Schedule 1':
                 date = self.schedule1_timeedit
+                toggle_no = 1
             elif toggle_name == 'Schedule 2':
                 date = self.schedule2_timeedit
+                toggle_no = 2
             elif toggle_name == 'Schedule 3':
                 date = self.schedule3_timeedit
-            else:
-                return
+                toggle_no = 3
             selected_start_time = date.dateTime()
             selected_end_time = selected_start_time.addSecs(30 * 60) # 30*60 = 1800 seconds, 30 mins
             
             self.selected_start_str = selected_start_time.toString("HH:mm")
             selected_end_str = selected_end_time.toString("HH:mm")
             self.send_to_database(self.selected_start_str, selected_end_str) #send scheduled time to db
-            print(f"{toggle_name} sent to DB with {self.selected_start_str}, {selected_end_str}")
+            print(f"{toggle_name} (status {toggle_state}) sent to DB with {self.selected_start_str}, {selected_end_str}")
+            self.send_to_central_server(toggle_no, toggle_state)
+            print(f"{toggle_name} (status {toggle_state}) requested to turn on the schedule time to Central Server at {self.selected_start_str}, {selected_end_str}")
 
-            self.send_to_central_server()
+        elif toggle.isChecked() == False:
+            toggle_state = 1 #turned off
+            self.save_toggle_state(toggle_name, toggle_state)
+            if toggle_name == 'Schedule 1':
+                toggle_no = 1
+            elif toggle_name == 'Schedule 2':
+                toggle_no = 2
+            elif toggle_name == 'Schedule 3':
+                toggle_no = 3
+            self.send_to_central_server(toggle_no, toggle_state)
 
-            print(f"{toggle_name} requested to send motor control to Central Server at {selected_end_str}")
+            print(f"{toggle_name} (status {toggle_state}) requested to turn off the schedule time to Central Server")
+    
+    def load_toggle_state(self):
+        state_file = "toggle_states.json"
+        if os.path.exists(state_file):
+            with open(state_file, "r") as file:
+                return json.load(file)
+        return {}
 
     def onoff_schedule(self):
+        toggle_states = self.load_toggle_state()
+
         schedule1_toggle = AnimatedToggle(
                 checked_color="#ffbb00",
                 pulse_checked_color="#44FFB000"
@@ -688,6 +730,11 @@ class OrchardGUI(QMainWindow):
                 checked_color="#ffbb00",
                 pulse_checked_color="#44FFB000"
             )
+
+        # Restore previous toggle states
+        schedule1_toggle.setChecked(toggle_states.get('Schedule 1', False))
+        schedule2_toggle.setChecked(toggle_states.get('Schedule 2', False))
+        schedule3_toggle.setChecked(toggle_states.get('Schedule 3', False))
 
         # Connect the toggles to the state change signal
         schedule1_toggle.stateChanged.connect(lambda: self.on_toggle_state_change(schedule1_toggle, 'Schedule 1'))
@@ -715,14 +762,18 @@ class OrchardGUI(QMainWindow):
     # communication with central server & DB
     # ------------------------------------------------------------------------------------------------------------------------
 
-    def send_to_central_server(self):
+    def send_to_central_server(self, toggle_no, toggle_state):
         try:
-            current_time = QTime.currentTime().toString("HH:mm")
-            if current_time >= self.selected_start_str:
-                    schedule_time = self.selected_start_str.encode('utf-8')
-                    print(len(schedule_time))
-                    self.sock.sendall(b'SS' + schedule_time + b'\n')
-                    print(f"Time sent to server: raw-{self.selected_start_str} packet-{schedule_time}")
+            toggle_no_byte = toggle_no.encode('utf-8')
+            toggle_state_byte = toggle_state.encode('utf-8')
+            if toggle_state == 0:
+                schedule_time = self.selected_start_str.encode('utf-8')
+                # print(len(schedule_time))
+                self.sock.sendall(b'SS' + toggle_state_byte + toggle_no_byte + schedule_time + b'\n')
+                print(f"sent schedule{toggle_no} (status {toggle_state} to server: raw-{self.selected_start_str} packet-{schedule_time}")
+            elif toggle_state == 1:
+                self.sock.sendall(b'SS' + toggle_state_byte + toggle_no_byte + b'\n')
+                print(f"sent schedule{toggle_no} (status {toggle_state} to server: toggle down (switched off)")
         except Exception as e:
             print(f"Error in communication: {e}")
 
@@ -767,8 +818,8 @@ class OrchardGUI(QMainWindow):
             )
             cursor = connection.cursor()
             print(f"DB Connection Success")
-
-            cursor.execute("SELECT id, ST_X(location) AS x_coordinate, ST_Y(location) AS y_coordinate, planting_date FROM Tree")
+            
+            cursor.execute("SELECT id, x_coordinate, z_coordinate, planting_date FROM Tree")
             Tree_result = cursor.fetchall()
             #print(f"Recieved row from DB: Tree")
 
@@ -782,7 +833,7 @@ class OrchardGUI(QMainWindow):
                         combined_results.append((
                             tree[0], # tree_id
                             tree[1], # location x_coordinate
-                            tree[2], # location y_coordinate
+                            tree[2], # location z_coordinate
                             status[2], # flower_count
                             status[3], # bud_count
                             status[4], # pollination_count
