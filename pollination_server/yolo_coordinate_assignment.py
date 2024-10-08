@@ -1,6 +1,9 @@
 import cv2 as cv
-import socket
 from cv2 import aruco
+import socket
+import struct
+import threading
+import queue
 import numpy as np
 import os
 import time
@@ -14,13 +17,16 @@ from sklearn.cluster import DBSCAN
 CENTRAL_SERVER_IP = "192.168.1.11"
 CENTRAL_SERVER_PORT = 8888
 
-POLLINATION_SERVER_IP = "192.168.1.17"
+POLLINATION_SERVER_IP = "192.168.0.36"
 POLLINATION_SERVER_PORT = 8888
+
+frame_queue = queue.Queue()
 
 # -------------- Server Connection & Camera Utility Functions ---------------- #
 
 def connect_to_server(ip, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind((ip, port))
     sock.settimeout(5)
     try:
         sock.connect((ip, port))
@@ -45,6 +51,83 @@ def get_external_camera():
             cap_test.release()
             break
     return external_cam
+
+def receive_frame(conn):
+    """
+    클라이언트로부터 'SF' 헤더를 포함한 프레임 데이터를 수신하여 디코딩하는 함수
+    """
+    try:
+        # 헤더 읽기 (SF + 4바이트 크기 정보)
+        head = b''
+        while len(head) < 6:
+            head += conn.recv(6 - len(head))
+
+        if head[:2] == b'SF':
+            # 프레임 크기 추출 및 데이터 수신
+            frame_size = struct.unpack(">L", head[2:6])[0]
+            frame_data = b''
+            while len(frame_data) < frame_size:
+                packet = conn.recv(frame_size - len(frame_data))
+                if not packet:
+                    break
+                frame_data += packet
+
+            # 개행문자 처리 및 프레임 디코딩
+            conn.recv(1)
+            frame = cv.imdecode(np.frombuffer(frame_data, np.uint8), cv.IMREAD_COLOR)
+            return frame
+        
+        else:
+            print("Error: Invalid frame header")
+            return None
+        
+    except Exception as e:
+        print(f"Error during frame reception: {e}")
+        return None
+
+def handle_client(pollination_conn, pollination_addr):
+    print(f"클라이언트 {pollination_addr}와 연결되었습니다.")
+    try:
+        while True:
+            frame = receive_frame(pollination_conn)
+            if frame is not None:
+                frame = cv.rotate(frame, cv.ROTATE_90_COUNTERCLOCKWISE)
+                # 큐에 프레임 추가
+                frame_queue.put((pollination_addr, frame))
+                # cv.imshow(f"received frame from {pollination_addr}", frame)
+                # if cv.waitKey(1) & 0xFF == ord('q'):
+                #     break
+            else:
+                print(f"Error: Unable to decode frame from {pollination_addr}")
+                break
+    except Exception as e:
+        print(f"Error receiving or displaying frame from {pollination_addr}: {e}")
+    finally:
+        pollination_conn.close()
+        print(f"클라이언트 {pollination_addr} 연결 종료")
+        cv.destroyAllWindows()
+
+def start_server():
+    # 소켓 생성 및 바인딩
+    pollination_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    pollination_server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    pollination_server_socket.bind((POLLINATION_SERVER_IP, POLLINATION_SERVER_PORT))
+    pollination_server_socket.listen(5)
+    print(f"서버가 {POLLINATION_SERVER_IP}:{POLLINATION_SERVER_PORT}에서 대기 중입니다...")
+
+    try:
+        while True:
+            # 클라이언트 연결 수립
+            pollination_conn, pollination_addr = pollination_server_socket.accept()
+            # 새로운 클라이언트 처리 스레드 생성
+            client_thread = threading.Thread(target=handle_client, args=(pollination_conn, pollination_addr))
+            client_thread.daemon = True
+            client_thread.start()
+
+    except KeyboardInterrupt:
+        print("서버가 종료되었습니다.")
+    finally:
+        pollination_server_socket.close()
 
 # ----------------------- Flower Monitoring Functions ------------------------ #
 
@@ -161,7 +244,7 @@ def measure_marker_distances(marker_corners, marker_ids, marker_positions_cm, ma
                 actual_distance = np.linalg.norm(actual_position)
                 scale_factor = actual_distance / estimated_distance
                 scale_factors.append(scale_factor)
-                print(f"Marker ID {marker_id}: Scale Factor = {scale_factor}")
+                # print(f"Marker ID {marker_id}: Scale Factor = {scale_factor}")
                 # Adjust tvec using the scale factor
                 tvec *= scale_factor
                 estimated_distance = np.linalg.norm(tvec)
@@ -173,7 +256,7 @@ def measure_marker_distances(marker_corners, marker_ids, marker_positions_cm, ma
     # Compute average scale factor
     if scale_factors:
         average_scale = np.mean(scale_factors)
-        print(f"Average Scale Factor: {average_scale}")
+        # print(f"Average Scale Factor: {average_scale}")
     else:
         average_scale = None
         print("No scale factors computed. Check marker_positions_cm.")
@@ -189,6 +272,7 @@ def calibrate_3d_points(points_3d_marker, marker_positions_cm):
             triangulated_point = points_3d_marker[marker_id]['point']
             actual_position = marker_positions_cm[marker_id]
             triangulated_distance = np.linalg.norm(triangulated_point)
+            # actual_distance를 이런식으로 계산하는게 틀림, 실제 계산했을때 어떠한 차이가 발생하는지 확인 필요
             actual_distance = np.linalg.norm(actual_position)
             if triangulated_distance == 0:
                 print(f"Triangulated distance for marker ID {marker_id} is zero. Skipping scale factor.")
@@ -213,7 +297,6 @@ def triangulate_3d_points(captures, camera_matrix, dist_coeffs):
         for j in range(i + 1, len(captures)):
             capture1 = captures[i]
             capture2 = captures[j]
-
             R1, _ = cv.Rodrigues(capture1['rvec'])
             t1 = capture1['tvec'].reshape(3, 1)
             R2, _ = cv.Rodrigues(capture2['rvec'])
@@ -243,7 +326,6 @@ def triangulate_3d_points(captures, camera_matrix, dist_coeffs):
                     existing_point = points_3d_marker[obj_id]['point']
                     avg_point = np.mean([existing_point, point_3d], axis=0)
                     points_3d_marker[obj_id]['point'] = avg_point
-                    # Ensure class IDs are consistent
                     if points_3d_marker[obj_id]['class_id'] != class_id:
                         print(f"Warning: Class ID mismatch for object ID {obj_id}")
     return points_3d_marker
@@ -311,22 +393,6 @@ def count_flowers_by_distance(points_3d_marker, distance_threshold=5.0, class_nu
 
     return num_flowers, unique_points
 
-def remove_duplicates(points_3d_list, distance_threshold=5.0):
-    """
-    중복되는 3D 포인트를 제거합니다. 포인트 간의 거리가 distance_threshold(cm) 미만이면 중복으로 간주합니다.
-    """
-    unique_points = []
-    for point in points_3d_list:
-        duplicate_found = False
-        for upoint in unique_points:
-            distance = np.linalg.norm(point - upoint)
-            if distance < distance_threshold:
-                duplicate_found = True
-                break
-        if not duplicate_found:
-            unique_points.append(point)
-    return unique_points
-
 # ----------------------------- Main Function ----------------------------- #
 
 def main():
@@ -335,15 +401,20 @@ def main():
     #     return
     # central_sock.settimeout(None)
 
+    # # ArUco Detection 상태 전송을 위한 변수 초기화
     # last_sent_time = 0
     # detection_status = None
     # flag = False
+
+    server_thread = threading.Thread(target=start_server)
+    server_thread.daemon = True  # 메인 스레드 종료 시 서버 스레드도 종료되도록 설정
+    server_thread.start()
 
     try:
         # 1. Parse Command-Line Arguments
         parser = argparse.ArgumentParser(description='YOLO Object Tracking with 3D Triangulation using Epipolar Geometry')
         parser.add_argument('--model', type=str, default='/home/ask/OneDrive/Document/dev_ws_DL/count_flower/best0x98.pt',
-                            help='Path to the YOLOv8 model file')
+                            help='Path to the YOLOv8 l model file')
         parser.add_argument('--calib_data', type=str, default='/home/ask/OneDrive/Document/dev_ws_DL/count_flower/logi_calibration.npz',
                             help='Path to the camera calibration data (.npz file)')
         parser.add_argument('--save_dir', type=str, default='captured_frames/home/ask/OneDrive/Document/dev_ws_DL/count_flower/5.YOLO_coordinate/save_dir',
@@ -415,17 +486,15 @@ def main():
                 print("프레임을 읽을 수 없습니다.")
                 break
 
-            # Undistort and rotate the frame
+            # 왜곡 보정 및 프레임 회전
             frame_undist = cv.undistort(frame, camera_matrix, dist_coeffs)
             rotated_frame_undist = cv.rotate(frame_undist, cv.ROTATE_90_COUNTERCLOCKWISE)
 
-            # Convert to grayscale for ArUco detection
+            # grayscale 이미지로 변환
             gray = cv.cvtColor(rotated_frame_undist, cv.COLOR_BGR2GRAY)
 
             # Detect ArUco markers
             corners, ids, rejected = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
-            # if ids is not None:
-            #     # print(f"Detected corners: {corners}, IDs: {ids}")
 
             # ----------------- Server Connection & Data Transmission ----------------- #
             
@@ -510,6 +579,11 @@ def main():
 
             # 출력 프레임 표시
             cv.imshow('YOLO Tracking with 3D Triangulation', frame_annotated)
+
+            # Pollination Server로부터 수신한 프레임 표시
+            while not frame_queue.empty():
+                pollination_addr, client_frame = frame_queue.get()
+                cv.imshow(f"Received frame from {pollination_addr}", client_frame)
 
             # Handle Key Presses
             key = cv.waitKey(1) & 0xFF
