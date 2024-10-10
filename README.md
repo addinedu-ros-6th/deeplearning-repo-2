@@ -1,20 +1,27 @@
-# 딥러닝 프로젝트 2조. 사과꽃 인공수분을 위한 과수원 모니터링 로봇
-> ***DeepLearning Project Team 2 Repository: Orchard Monitoring Robot for Pollination of Apple Flowers***
+# 딥러닝 프로젝트 2조. 사과 과수원 모니터링 로봇
+> ***DeepLearning Project Team 2 Repository: Orchard Monitoring Robot for Pollination and Fruit Set Yield of Apple Flowers***
 
-## 개요
-### 주제 소개
-- 사과의 인공수분 작업을 돕는 과수원 모니터링용 로봇
+## 🏁 개요
 
-### 프로젝트 기간
+### 📌 주제 소개
+- 사과나무의 인공수분, 착과량 모니터링 로봇
+
+<br>
+
+### 🗓️ 프로젝트 기간
 - 8월 29일 - 9월 25일
 
-### 주제 선정 배경
+<br>
+
+### 💡 주제 선정 배경
 (1) 농업 고령화
 
 (2) 노동 집약적 산업
 
 
-### 기술 스택
+<br>
+
+### 🛠️ 기술 스택 
 |분류|기술|
 |-----|-----|
 |개발 환경|![js](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=Ubuntu&logoColor=white) |
@@ -24,8 +31,9 @@
 |하드웨어| <img src="https://img.shields.io/badge/Raspberry%20Pi-A22846?style=for-the-badge&logo=Raspberry%20Pi&logoColor=white"> ![Arduino](https://img.shields.io/badge/-Arduino-00979D?style=for-the-badge&logo=Arduino&logoColor=white)|
 |협업| ![js](https://img.shields.io/badge/GIT-E44C30?style=for-the-badge&logo=git&logoColor=white) ![js](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white) ![js](https://img.shields.io/badge/confluence-%23172BF4.svg?style=for-the-badge&logo=confluence&logoColor=white) ![js](https://img.shields.io/badge/Jira-0052CC?style=for-the-badge&logo=Jira&logoColor=white) ![js](https://img.shields.io/badge/Slack-4A154B?style=for-the-badge&logo=slack&logoColor=white)|
 
+<br>
 
-## 팀원 소개
+### 🙌 팀원 소개
 
 |이름|담당|
 |----|-----|
@@ -36,12 +44,14 @@
 |이시원|차선 인식 및 모터 제어 <br> 장애물 및 사과 꽃 모델 학습 <br> PPT 제작|
 
 
-## 시스템 아키텍처
+<br>
 
-### 시스템 설계
+## ⚙️ 시스템 아키텍처
+
+### 1️⃣ 시스템 설계
 - 시스템 구성도
 - ?
-### 주요 시나리오
+### 2️⃣ 주요 시나리오
 - 상황 발생 시나리오 시퀀스 다이어그램
   ?
 - 카메라 수동 조작 시나리오 시퀀스 다이어그램 
@@ -49,36 +59,7 @@
 - 상황 종료 시나리오 시퀀스 다이어그램
 ?
 
-## 기능 및 기술 구현
-### 과수원 및 인공수분 모니터링을 위한 도로 주행
-#### 주요 기능
-- 꽃 상태 체크를 위한 순찰 기능
-- 작업 대기 장소 복귀 기능
-![Screenshot from 2024-10-04 17-54-44](https://github.com/user-attachments/assets/a2f844c1-23f8-46b2-9682-5b2ee74d7618)
-#### 구현 기술
-- HSV 색공간에 x, y 방향 경계 활용 및 급회전 구간에 대한 예외 처리 (인식 및 방향)를 통한 ***Line tracking 기술 구현***
-- 교차로 (갈래 길)에 대한 방향 설정 및 나무 번호 부여 순서에 따른 로봇 이동을 위한 ***Aruco Marker 기술 구현***
-
-  
-### 사과 나무 꽃 감지 및 인공수분 여부 파악
-#### 주요 기능
-- 사과 꽃 상태 인식 기능 : 꽃봉우리 혹은 개화한 꽃으로 구분
-- 인공수분 완료 여부 체크 기능
-![Screenshot from 2024-10-04 17-58-59](https://github.com/user-attachments/assets/05c079cb-0ed0-46a9-af66-c88930a811f0)
-#### 구현 기술
-
-### 도로 위 장애물 감지
-#### 주요 기능
-#### 구현 기술
-
-
-### 인공수분 모니터링
-#### 주요 기능
-#### 구현 기술
-
-
-
-### 통신 프로토콜 정의
+### 3️⃣ 통신 프로토콜 정의
 #### Communication Protocol List
 |Transmitter|Receiver|Communication Protocol|
 |-----|-----|-----|
@@ -226,11 +207,65 @@
 </table>
 
 
-### GUI 설계
+### 4️⃣ GUI 설계
 - ?
   
-### Database 설계
-- ?
+### 5️⃣ Database 설계 
+#### 관계정의 개체(Entity)
+- 개화된 꽃, 인공수분된 꽃, 꽃봉오리 수 등 나무의 상태 정보 모니터링
+- 나무의 위치정보, 심은날짜, 인공수분 완료 여부
+- 장애물 정보
+- 현재 작업 단계와 로봇 작업 로그 모니터링
+- 로봇 상태 모니터링
+- 로봇 대기장소 위치 정보
+- 로봇의 작업 스케줄 관리
+- ArUco 마커의 위치 및 연결대상 관리
+#### 설계의도
+1. 중복 배제
+   - 나무 모니터링 작업 로그 작성시 Tree 테이블과 TreeCurrentStatus 테이블 생성을 통해 모니터링 데이터를 TreeCurrentStatus에 저장하여 중복하여 데이터가 저장되는것을 배제함 
+2. 효율적인 검색
+   - TaskLog 테이블의 자료형을 int형으로 생성 및 정규화 작업을 통해 효율적인 검색이 가능하도록 함
+3. 동적 할당
+   - 로봇, 나무 수의 증가하는 등의 시스템 확장시에도 동적으로 대기장소(station)와 나무를 ArUco 마커가 할당 될 수 있도록 TreeAruco, RobotStationAssignment 테이블을 생성함
+  
+![DB_schema-Page-1 drawio](https://github.com/user-attachments/assets/298cc87e-9e59-489e-a149-0baf39a65793)
+
+<br>
+
+## 🔗 기능 및 기술 구현
+
+### 1️⃣ 과수원 및 인공수분 모니터링을 위한 도로 주행
+#### 주요 기능
+- 꽃 상태 체크를 위한 순찰 기능
+- 작업 대기 장소 복귀 기능
+![Screenshot from 2024-10-04 17-54-44](https://github.com/user-attachments/assets/a2f844c1-23f8-46b2-9682-5b2ee74d7618)
+
+
+#### 구현 기술
+- HSV 색공간에 x, y 방향 경계 활용 및 급회전 구간에 대한 예외 처리 (인식 및 방향)를 통한 ***Line tracking 기술 구현***
+- 교차로 (갈래 길)에 대한 방향 설정 및 나무 번호 부여 순서에 따른 로봇 이동을 위한 ***Aruco Marker 기술 구현***
+
+  
+### 2️⃣ 사과 나무 꽃 감지 및 인공수분 여부 파악
+#### 주요 기능
+- 사과 꽃 상태 인식 기능 : 꽃봉우리 혹은 개화한 꽃으로 구분
+- 인공수분 완료 여부 체크 기능
+![Screenshot from 2024-10-04 17-58-59](https://github.com/user-attachments/assets/05c079cb-0ed0-46a9-af66-c88930a811f0)
+
+#### 구현 기술
+
+### 3️⃣ 도로 위 장애물 감지
+#### 주요 기능
+#### 구현 기술
+
+
+### 4️⃣ 인공수분 모니터링
+#### 주요 기능
+#### 구현 기술
+
+
+
+
 
 ## 시현 영상
 - ?
