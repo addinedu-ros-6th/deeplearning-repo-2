@@ -74,45 +74,29 @@ dist = np.array([[-0.26706898,  0.10305542, -0.00088013,  0.00080643, -0.1957402
 
 left_speed = 0
 right_speed = 0
+global state, state_start_time
 
-# 이전 프레임의 차선 무게중심 좌표 저장 변수 초기화
-prev_left_center_x = None
-prev_right_center_x = None
-arco_maker_detect = False
+# ARUCO 마커의 실제 크기 (미터 단위)
+MARKER_SIZE = 0.0195  # 마커의 실제 크기 (미터 단위)
 
-# ARUCO marker의 크기와 초점 거리 (1)
-focal_length = mtx[0, 0]
-MARKER_SIZE = 0.0195
-
-# ARUCO marker 텍스트를 이미지에 그리는 함수 (2)
+# 이미지에 텍스트를 그리는 함수
 def draw_text(img, text, position, font=cv2.FONT_HERSHEY_SIMPLEX, 
               scale=0.6, color=(0, 0, 255), thickness=1):
-    text_size, baseline = cv2.getTextSize(text, font, scale, thickness)
-    x, y = position
-    img_h, img_w, _ = img.shape
-
-    # Adjust x and y to ensure text is within the image boundaries
-    x = max(0, x)
-    y = max(0, y)
-
-    # Clip text to fit within image boundaries
-    text_width, text_height = text_size
-    if x + text_width > img_w or y + text_height > img_h:
-        print(f"Skipped drawing text '{text}' due to boundary issues.")
-        return
-
-    cv2.putText(img, text, (x, y + text_height), font, scale, color, thickness, cv2.LINE_AA)
+    cv2.putText(img, text, position, font, scale, color, thickness, cv2.LINE_AA)
 
 def handle_client(rpi_conn):
-    global left_speed, right_speed, arco_maker_detect 
-    global prev_left_center_x, prev_right_center_x
+    global left_speed, right_speed
+    global state, state_start_time
+    state = 'lane_following'
+    state_start_time = None
+
     try:
         while True:
             header = b''
             while len(header) < 2:
                 header += rpi_conn.recv(2 - len(header))
 
-            # frame data
+            # 프레임 데이터
             if header == b'SF':
                 size_data = b''
                 while len(size_data) < 4:
@@ -129,224 +113,284 @@ def handle_client(rpi_conn):
                         break
                     frame_data += packet
 
-                rpi_conn.recv(1)  # \n 받기
+                rpi_conn.recv(1)  # '\n' 받기
 
                 frame = cv2.imdecode(np.frombuffer(frame_data, np.uint8), cv2.IMREAD_COLOR)
-
-                # ARUCO marker 딕셔너리 생성 및 파라미터 설정 (3)
-                marker_dict = aruco.getPredefinedDictionary(aruco.DICT_5X5_100)
-                param_markers = aruco.DetectorParameters()
-
-                # ARUCO marker grayscale로 변환 (4)
-                gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                marker_corners, marker_IDs, reject = aruco.detectMarkers(
-                    gray_frame, marker_dict, parameters=param_markers
-                )
-                
-                # ARUCO marker가 검출되면 (5)
-                if marker_corners:
-                    arco_maker_detect = True
-                    total_markers = range(0, marker_IDs.size)
-                    for ids, corners, i in zip(marker_IDs, marker_corners, total_markers):
-                        # Draw marker boundaries
-                        cv2.polylines(
-                            frame, 
-                            [corners.astype(np.int32)], 
-                            True, 
-                            (0, 255, 255), 
-                            4, 
-                            cv2.LINE_AA
-                        )
-                        corners = corners.reshape(4, 2).astype(int)
-                        top_right = tuple(corners[0])
-                        top_left = tuple(corners[1])
-                        bottom_right = tuple(corners[2])
-                        bottom_left = tuple(corners[3])
-
-                        # Calculate pixel size of the marker
-                        pixel_width = np.linalg.norm(np.array(top_left) - np.array(top_right))
-                        pixel_height = np.linalg.norm(np.array(top_left) - np.array(bottom_left))
-                        pixel_size = (pixel_width + pixel_height) / 2  # Average pixel size
-
-                        # Estimate distance using pinhole camera model
-                        distance = (MARKER_SIZE * focal_length) / pixel_size
-
-                        # Determine text position (e.g., top_right)
-                        text_position = top_right
-
-                        # Prepare text to display
-                        text = f"id: {ids[0]} Dist: {round(distance, 2)}m"
-                        draw_text(frame, text, text_position)
 
                 if frame is not None:
                     # 카메라 캘리브레이션 적용
                     undist_frame = cv2.undistort(frame, mtx, dist, None, mtx)
 
-                    # 차선 검출
-                    gradx = abs_sobel_thresh(undist_frame, orient='x', thresh_min=50, thresh_max=255)
-                    grady = abs_sobel_thresh(undist_frame, orient='y', thresh_min=50, thresh_max=255)
+                    # ARUCO 마커 딕셔너리 생성 및 파라미터 설정
+                    marker_dict = aruco.getPredefinedDictionary(aruco.DICT_5X5_100)
+                    param_markers = aruco.DetectorParameters()
 
-                    # 색상 임계값 적용
-                    c_binary = color_threshold(undist_frame)
+                    # ARUCO 마커 그레이스케일로 변환
+                    gray_frame = cv2.cvtColor(undist_frame, cv2.COLOR_BGR2GRAY)
+                    marker_corners, marker_IDs, reject = aruco.detectMarkers(
+                        gray_frame, marker_dict, parameters=param_markers
+                    )
 
-                    # 최종 이진 이미지 생성
-                    preprocessImage = np.zeros_like(undist_frame[:, :, 0])
-                    preprocessImage[((gradx == 1) & (grady == 1)) | (c_binary == 1)] = 255
+                    # 아르코 마커 위치 초기화
+                    cam_x, cam_y, cam_z = None, None, None
 
-                    # ROI 적용
-                    preprocessImage = apply_roi(preprocessImage)
+                    # ARUCO 마커가 검출되면
+                    if marker_corners and marker_IDs is not None:
+                        # 포즈 추정
+                        rvecs, tvecs, _objPoints = aruco.estimatePoseSingleMarkers(
+                            marker_corners, MARKER_SIZE, mtx, dist
+                        )
+                        for i, ids in enumerate(marker_IDs):
+                            # 마커 경계 그리기
+                            aruco.drawDetectedMarkers(undist_frame, marker_corners)
 
-                    # 무게 중심을 기반으로 모터 제어
-                    midpoint = preprocessImage.shape[1] // 2
+                            # 마커의 중심을 원점으로 설정하고 차량의 위치 계산
+                            R_ct = np.matrix(cv2.Rodrigues(rvecs[i])[0])
+                            R_tc = R_ct.T
+                            camera_position = -R_tc * np.matrix(tvecs[i][0]).T
+                            camera_position = camera_position * 100  # cm로 변환
+                            cam_x, cam_y, cam_z = camera_position.A1
 
-                    nonzero = preprocessImage.nonzero()
-                    nonzeroy = np.array(nonzero[0])
-                    nonzerox = np.array(nonzero[1])
+                            # 표시할 텍스트 준비
+                            text = f"x={cam_x:.1f}cm y={cam_y:.1f}cm z={cam_z:.1f}cm"
 
-                    left_lane_inds = (nonzerox < midpoint)
-                    right_lane_inds = (nonzerox >= midpoint)
+                            # 마커의 중심 찾기
+                            corners = marker_corners[i].reshape(4, 2)
+                            marker_center = np.mean(corners, axis=0).astype(int)
+                            cv2.circle(undist_frame, tuple(marker_center), 5, (0, 0, 255), -1)
 
-                    leftx = nonzerox[left_lane_inds]
-                    lefty = nonzeroy[left_lane_inds]
-                    rightx = nonzerox[right_lane_inds]
-                    righty = nonzeroy[right_lane_inds]
+                            # x, y, z 값 출력
+                            print(f"x={cam_x:.1f}cm, y={cam_y:.1f}cm, z={cam_z:.1f}cm")
 
-                    # 왼쪽 차선의 무게중심 계산 및 표시
-                    if len(leftx) > 0 and len(lefty) > 0:
-                        left_center_x = int(np.mean(leftx))
-                        left_center_y = int(np.mean(lefty))
-                        cv2.circle(undist_frame, (left_center_x, left_center_y), 5, (0, 255, 0), -1)
+                            # 좌표축 직접 그리기
+                            axis_length = 0.01  # 1cm
+                            axis_points = np.float32([
+                                [0, 0, 0],  # 원점
+                                [axis_length, 0, 0],  # x축
+                                [0, axis_length, 0],  # y축
+                                [0, 0, axis_length]   # z축
+                            ]).reshape(-1, 3)
+
+                            # 이미지 평면으로 투영
+                            imgpts, jac = cv2.projectPoints(axis_points, rvecs[i], tvecs[i], mtx, dist)
+                            imgpts = np.int32(imgpts).reshape(-1, 2)
+
+                            # 원점과 각 축 끝점을 연결하여 그리기
+                            origin = tuple(imgpts[0])
+                            cv2.line(undist_frame, origin, tuple(imgpts[1]), (0, 0, 255), 2)  # x축 (빨강)
+                            cv2.line(undist_frame, origin, tuple(imgpts[2]), (0, 255, 0), 2)  # y축 (초록)
+                            cv2.line(undist_frame, origin, tuple(imgpts[3]), (255, 0, 0), 2)  # z축 (파랑)
+
                     else:
-                        left_center_x = None
-                        left_center_y = None
+                        print("아르코 마커가 검출되지 않았습니다.")
 
-                    # 오른쪽 차선의 무게중심 계산 및 표시
-                    if len(rightx) > 0 and len(righty) > 0:
-                        right_center_x = int(np.mean(rightx))
-                        right_center_y = int(np.mean(righty))
-                        cv2.circle(undist_frame, (right_center_x, right_center_y), 5, (0, 255, 0), -1)
-                    else:
-                        right_center_x = None
-                        right_center_y = None
+                    # 여기서 상태 관리를 시작합니다.
+                    # x_min, x_max, y_min, y_max, z_min, z_max를 설정합니다.
+                    x_min, x_max = -1, 0.9   # cm
+                    y_min, y_max = 11.0, 30  # cm
+                    z_min, z_max = 0.0, 30.0  # cm
 
-                    if arco_maker_detect and ids[0] == 1:
-                        left_speed = 5
-                        right_speed = 43 
-                        arco_maker_detect = False 
+                    if state == 'lane_following':
+                        # (1) 차선 검출: x, y 경계값
+                        gradx = abs_sobel_thresh(undist_frame, orient='x', thresh_min=50, thresh_max=255)
+                        grady = abs_sobel_thresh(undist_frame, orient='y', thresh_min=50, thresh_max=255)
 
-                    # 두 차선의 무게중심 간의 거리 계산
-                    if left_center_x is not None and right_center_x is not None:
-                        lane_distance = abs(right_center_x - left_center_x)
-                        lane_distance_threshold = 100  # 임계값 설정 (실험을 통해 조절 필요)
+                        # (2) 차선 검출: 색상 임계값
+                        c_binary = color_threshold(undist_frame)
 
-                        # 차선 너비를 영상에 표시 (픽셀 단위)
-                        cv2.putText(undist_frame, f"Lane Width: {lane_distance}px", (50, 50),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
+                        # 최종 이진 이미지 생성
+                        preprocessImage = np.zeros_like(undist_frame[:, :, 0])
+                        preprocessImage[((gradx == 1) & (grady == 1)) | (c_binary == 1)] = 255
 
-                        if lane_distance < lane_distance_threshold:
-                            # 두 차선이 매우 가까워서 하나의 차선만 감지된 것으로 판단
-                            print("두 차선의 간격이 좁습니다. 하나의 차선으로 간주합니다.")
+                        # ROI 적용
+                        preprocessImage = apply_roi(preprocessImage)
 
-                            # 이전 프레임의 차선 위치를 활용하여 어느 차선이 사라졌는지 판단
-                            if prev_left_center_x is not None and prev_right_center_x is not None:
-                                # 현재 감지된 차선의 위치가 이전 왼쪽 차선 위치와 가까운지, 오른쪽 차선 위치와 가까운지 판단
-                                if abs(left_center_x - prev_left_center_x) < abs(left_center_x - prev_right_center_x):
-                                    # 오른쪽 차선이 사라진 것으로 판단하고 오른쪽으로 회전
+                        # 프레임 너비 계산
+                        frame_width = preprocessImage.shape[1]
+
+                        # 왼쪽 ROI 설정 (프레임의 왼쪽 1/3)
+                        left_roi_x_end = int(frame_width * 1/3)
+                        cv2.line(undist_frame, (left_roi_x_end, 0), (left_roi_x_end, undist_frame.shape[0]), (255, 255, 0), 2)
+
+                        # 오른쪽 ROI 설정 (프레임의 오른쪽 1/3)
+                        right_roi_x_start = int(frame_width * 2/3)
+                        cv2.line(undist_frame, (right_roi_x_start, 0), (right_roi_x_start, undist_frame.shape[0]), (255, 255, 0), 2)
+
+                        # 왼쪽 ROI에서 무게중심 계산
+                        nonzero = preprocessImage.nonzero()
+                        nonzeroy = np.array(nonzero[0])
+                        nonzerox = np.array(nonzero[1])
+
+                        left_lane_inds = (nonzerox >= 0) & (nonzerox < left_roi_x_end)
+                        leftx = nonzerox[left_lane_inds]
+                        lefty = nonzeroy[left_lane_inds]
+
+                        # 오른쪽 ROI에서 무게중심 계산
+                        right_lane_inds = (nonzerox >= right_roi_x_start) & (nonzerox < frame_width)
+                        rightx = nonzerox[right_lane_inds]
+                        righty = nonzeroy[right_lane_inds]
+
+                        # 왼쪽 차선의 무게중심 계산 및 표시
+                        if len(leftx) > 0 and len(lefty) > 0:
+                            left_center_x = int(np.mean(leftx))
+                            left_center_y = int(np.mean(lefty))
+                            cv2.circle(undist_frame, (left_center_x, left_center_y), 5, (0, 255, 0), -1)
+                        else:
+                            left_center_x = None
+                            left_center_y = None
+
+                        # 오른쪽 차선의 무게중심 계산 및 표시
+                        if len(rightx) > 0 and len(righty) > 0:
+                            right_center_x = int(np.mean(rightx))
+                            right_center_y = int(np.mean(righty))
+                            cv2.circle(undist_frame, (right_center_x, right_center_y), 5, (0, 255, 0), -1)
+                        else:
+                            right_center_x = None
+                            right_center_y = None
+
+                        # 차선 기반 모터 제어 코드
+
+                        # 두 차선 모두 감지된 경우
+                        if left_center_x is not None and right_center_x is not None:
+                            lane_distance = abs(right_center_x - left_center_x)
+                            print(f"Lane Width: {lane_distance}px")
+
+                            if lane_distance < 400:
+                                # 하나의 차선이 사라진 것으로 간주
+                                print("차선 간격이 좁습니다. 하나의 차선이 사라졌다고 판단합니다.")
+                                # 어느 차선이 사라졌는지 판단
+                                if left_center_x < frame_width / 2:
+                                    # 왼쪽 차선만 감지됨, 오른쪽 차선이 사라짐
                                     print("오른쪽 차선이 사라졌습니다. 오른쪽으로 회전합니다.")
-                                    left_speed = 43  # 왼쪽 바퀴 속도
-                                    right_speed = 5  # 오른쪽 바퀴 속도
+                                    left_speed = 5
+                                    right_speed = 43
                                 else:
-                                    # 왼쪽 차선이 사라진 것으로 판단하고 왼쪽으로 회전
+                                    # 오른쪽 차선만 감지됨, 왼쪽 차선이 사라짐
                                     print("왼쪽 차선이 사라졌습니다. 왼쪽으로 회전합니다.")
-                                    left_speed = 5  # 왼쪽 바퀴 속도
-                                    right_speed = 43  # 오른쪽 바퀴 속도
+                                    left_speed = 43
+                                    right_speed = 5
                             else:
-                                # 이전 프레임의 정보가 없는 경우 기본 동작 설정
-                                print("차선 정보가 부족하여 기본 동작을 수행합니다.")
-                                left_speed = 30
-                                right_speed = 30
-                        else:
-                            # 두 차선 모두 정상적으로 감지된 경우
-                            mid_center_x = int((left_center_x + right_center_x) / 2)
-                            mid_center_y = int((left_center_y + right_center_y) / 2)
-                            cv2.circle(undist_frame, (mid_center_x, mid_center_y), 5, (255, 0, 0), -1)
+                                # 정상적인 차선 추종
+                                mid_center_x = int((left_center_x + right_center_x) / 2)
+                                mid_center_y = int((left_center_y + right_center_y) / 2)
+                                cv2.circle(undist_frame, (mid_center_x, mid_center_y), 5, (255, 0, 0), -1)
 
-                            # 이미지 중앙과의 편차 계산
-                            image_center_x = undist_frame.shape[1] // 2
-                            deviation = mid_center_x - image_center_x
+                                # 왼쪽 경계로부터의 거리 계산
+                                distance_from_left = mid_center_x
+                                max_distance = frame_width  # 최대 거리
 
-                            # 모터 값 계산 및 전송
-                            max_speed = 80  # 최대 속도
-                            left_base_speed = 30  # 기본 속도****************
-                            right_base_speed = 34
-                            max_deviation = undist_frame.shape[1] // 2
+                                # 거리를 0부터 1 사이로 정규화
+                                normalized_distance = distance_from_left / max_distance
+                                normalized_distance = np.clip(normalized_distance, 0, 1)
 
-                            normalized_deviation = deviation / max_deviation
-                            normalized_deviation = np.clip(normalized_deviation, -1, 1)
+                                # 왼쪽에서 멀어질수록 회전 강도를 높임
+                                max_turn_speed = 100  # 최대 회전 속도 차이
 
-                            left_speed = left_base_speed - (normalized_deviation * left_base_speed)
-                            right_speed = right_base_speed + (normalized_deviation * right_base_speed)
+                                # 중앙부에 ROI 영역 설정 (디버깅을 위해)
+                                roi_width = 30  # ROI의 너비
+                                roi_left_boundary = (frame_width - roi_width) // 2
+                                roi_right_boundary = roi_left_boundary + roi_width
 
-                            left_speed = int(np.clip(left_speed, 0, max_speed))
-                            right_speed = int(np.clip(right_speed, 0, max_speed))
-                    elif left_center_x is not None and right_center_x is None:
-                        # 오른쪽 차선이 사라진 경우
-                        if prev_right_center_x is not None:
-                            # 남아있는 왼쪽 차선의 위치가 이전 오른쪽 차선의 위치와 가까운지 확인
-                            if abs(left_center_x - prev_right_center_x) < abs(left_center_x - prev_left_center_x):
-                                # 왼쪽 차선이 사라지고 오른쪽 차선만 남은 것으로 판단
-                                print("왼쪽 차선이 사라졌습니다. 왼쪽으로 회전합니다.")
-                                left_speed = 5  # 왼쪽 바퀴 속도
-                                right_speed = 43  # 오른쪽 바퀴 속도
-                            else:
-                                print("오른쪽 차선이 사라졌습니다. 오른쪽으로 회전합니다.")
-                                left_speed = 43  # 왼쪽 바퀴 속도
-                                right_speed = 5  # 오른쪽 바퀴 속도
-                        else:
-                            # 이전 오른쪽 차선 정보가 없을 때 기본적으로 오른쪽으로 회전
-                            print("오른쪽 차선이 사라졌습니다. 오른쪽으로 회전합니다.")
+                                # ROI 영역 시각화
+                                cv2.line(undist_frame, (roi_left_boundary, 0), (roi_left_boundary, undist_frame.shape[0]), (0, 255, 255), 2)
+                                cv2.line(undist_frame, (roi_right_boundary, 0), (roi_right_boundary, undist_frame.shape[0]), (0, 255, 255), 2)
+
+                                if roi_left_boundary <= mid_center_x <= roi_right_boundary:
+                                    # ROI 내에 있으면 직진 주행
+                                    left_speed = 30  # 기본 속도
+                                    right_speed = 34  # 기본 속도
+                                    print("중앙선 내에 있습니다. 직진 주행합니다.")
+                                else:
+                                    # 왼쪽에서 멀어진 정도에 따라 회전 강도 조절
+                                    if mid_center_x < roi_left_boundary:
+                                        # 왼쪽으로 치우쳤으므로 오른쪽으로 회전해야 함
+                                        turn_intensity = (roi_left_boundary - mid_center_x) / roi_left_boundary
+                                        left_speed = 30 - (turn_intensity * max_turn_speed + 5)
+                                        right_speed = 34 + (turn_intensity * max_turn_speed + 5)
+                                        print(f"왼쪽으로 치우쳤습니다. 오른쪽으로 회전합니다. 거리 비율: {turn_intensity:.2f}")
+                                    else:
+                                        # 오른쪽으로 치우쳤으므로 왼쪽으로 회전해야 함
+                                        turn_intensity = (mid_center_x - roi_right_boundary) / (frame_width - roi_right_boundary)
+                                        left_speed = 30 + (turn_intensity * max_turn_speed + 5)
+                                        right_speed = 34 - (turn_intensity * max_turn_speed+ 5)
+                                        print(f"오른쪽으로 치우쳤습니다. 왼쪽으로 회전합니다. 거리 비율: {turn_intensity:.2f}")
+
+                                # 속도 값이 유효한 범위 내에 있도록 제한
+                                max_speed = 80  # 최대 속도
+                                left_speed = int(np.clip(left_speed, 0, max_speed))
+                                right_speed = int(np.clip(right_speed, 0, max_speed))
+
+                        # 왼쪽 차선만 감지된 경우
+                        elif left_center_x is not None and right_center_x is None:
+                            print("오른쪽 차선이 감지되지 않았습니다. 오른쪽으로 회전합니다.")
                             left_speed = 43
                             right_speed = 5
-                    elif left_center_x is None and right_center_x is not None:
-                        # 왼쪽 차선이 사라진 경우
-                        if prev_left_center_x is not None:
-                            # 남아있는 오른쪽 차선의 위치가 이전 왼쪽 차선의 위치와 가까운지 확인
-                            if abs(right_center_x - prev_left_center_x) < abs(right_center_x - prev_right_center_x):
-                                # 오른쪽 차선이 사라지고 왼쪽 차선만 남은 것으로 판단
-                                print("오른쪽 차선이 사라졌습니다. 오른쪽으로 회전합니다.")
-                                left_speed = 47  # 왼쪽 바퀴 속도
-                                right_speed = 5  # 오른쪽 바퀴 속도
-                            else:
-                                print("왼쪽 차선이 사라졌습니다. 왼쪽으로 회전합니다.")
-                                left_speed = 5  # 왼쪽 바퀴 속도
-                                right_speed = 47  # 오른쪽 바퀴 속도
-                        else:
-                            # 이전 왼쪽 차선 정보가 없을 때 기본적으로 왼쪽으로 회전
-                            print("왼쪽 차선이 사라졌습니다. 왼쪽으로 회전합니다.")
+
+                        # 오른쪽 차선만 감지된 경우
+                        elif left_center_x is None and right_center_x is not None:
+                            print("왼쪽 차선이 감지되지 않았습니다. 왼쪽으로 회전합니다.")
                             left_speed = 5
-                            right_speed = 47
-                    else:
-                        # 차선이 모두 감지되지 않은 경우, 속도를 감소하거나 정지
-                        print("차선이 감지되지 않았습니다. 속도를 감소합니다.")
+                            right_speed = 43
+
+                        else:
+                            # 차선이 모두 감지되지 않은 경우, 정지
+                            print("차선이 감지되지 않았습니다. 정지합니다.")
+                            left_speed = 0
+                            right_speed = 0
+
+                        # ARUCO 마커가 지정된 범위 내에 있는지 확인
+                        if cam_x is not None and (x_min <= cam_x <= x_max) and (y_min <= cam_y <= y_max) and (z_min <= cam_z <= z_max):
+                            # 상태를 'aruco_stopped'로 전환
+                            print("ARUCO 마커가 범위 내에 있습니다. 3초간 정지합니다.")
+                            left_speed = 0
+                            right_speed = 0
+                            state = 'aruco_stopped'
+                            state_start_time = time.time()
+
+                    elif state == 'aruco_stopped':
+                        # 차량을 5초 동안 정지
                         left_speed = 0
                         right_speed = 0
+                        elapsed = time.time() - state_start_time
+                        if elapsed >= 5.0:
+                            # 3초 후 전진 시작
+                            left_speed = 26
+                            right_speed = 30
+                            state = 'moving_forward'
+                            state_start_time = time.time()
+                            print("3초간 정지 후 3초간 전진을 시작합니다.")
 
-                    # 현재 프레임의 차선 위치를 저장하여 다음 프레임에서 사용
-                    prev_left_center_x = left_center_x
-                    prev_right_center_x = right_center_x
+                    elif state == 'moving_forward':
+                        # 차량을 5초 동안 전진
+                        left_speed = 26
+                        right_speed = 30
+                        elapsed = time.time() - state_start_time
+                        if elapsed >= 5.0:
+                            # 3초 후 차선 인식 모드로 전환
+                            state = 'lane_following'
+                            print("3초간 전진 후 차선 인식 모드로 전환합니다.")
+
+                    else:
+                        # 기타 상태에서는 아무것도 하지 않음
+                        pass
 
                     # 화면에 디버그용으로 표시
-                    lane_overlay = np.zeros_like(undist_frame)
-                    lane_overlay[preprocessImage == 255] = [0, 0, 255]
-                    combined = cv2.addWeighted(undist_frame, 0.7, lane_overlay, 1.0, 0)
-                    cv2.imshow("Lane Detection", combined)
+                    if state == 'lane_following':
+                        # 차선 인식 모드일 때만 차선 시각화를 표시
+                        lane_overlay = np.zeros_like(undist_frame)
+                        lane_overlay[preprocessImage == 255] = [0, 0, 255]
+                        combined = cv2.addWeighted(undist_frame, 0.7, lane_overlay, 1.0, 0)
+                        cv2.imshow("Lane Detection", combined)
+                    else:
+                        # 다른 상태에서는 원본 프레임만 표시
+                        cv2.imshow("Lane Detection", undist_frame)
 
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
                 else:
                     print("Error: Unable to decode frame")
 
-            # status data
+            # 상태 데이터
             elif header == b'CS':
                 status_data = b''
                 while len(status_data) < 1:
@@ -355,7 +399,7 @@ def handle_client(rpi_conn):
                         break
                     status_data += packet
 
-                rpi_conn.recv(1)  # \n 받기
+                rpi_conn.recv(1)  # '\n' 받기
 
                 status = int.from_bytes(status_data, byteorder="big")
                 if status == 1:
@@ -382,7 +426,7 @@ def send_motor_value(rpi_conn):
         except Exception as e:
             print(f"Error sending motor command: {e}")
 
-        time.sleep(1)  # 2~5초에 한번 쏴주는것만으로도 충분함. 타임 슬립없으면 충돌남.
+        time.sleep(1)  # 없으면 충돌남
 
 if __name__ == "__main__" :
 
