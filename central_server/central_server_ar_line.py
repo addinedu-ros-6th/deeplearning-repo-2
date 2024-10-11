@@ -90,11 +90,20 @@ def handle_client(rpi_conn):
     state = 'lane_following'
     state_start_time = None
 
+    # 이전 프레임의 차선 무게중심 좌표 저장 변수 초기화
+    prev_left_center_x = None
+    prev_right_center_x = None
+    prev_left_center_y = None
+    prev_right_center_y = None
+
     try:
         while True:
             header = b''
             while len(header) < 2:
-                header += rpi_conn.recv(2 - len(header))
+                packet = rpi_conn.recv(2 - len(header))
+                if not packet:
+                    break
+                header += packet
 
             # 프레임 데이터
             if header == b'SF':
@@ -158,6 +167,9 @@ def handle_client(rpi_conn):
                             corners = marker_corners[i].reshape(4, 2)
                             marker_center = np.mean(corners, axis=0).astype(int)
                             cv2.circle(undist_frame, tuple(marker_center), 5, (0, 0, 255), -1)
+
+                            # 이미지에 텍스트 그리기
+                            draw_text(undist_frame, text, (marker_center[0] + 10, marker_center[1] + 10))
 
                             # x, y, z 값 출력
                             print(f"x={cam_x:.1f}cm, y={cam_y:.1f}cm, z={cam_z:.1f}cm")
@@ -300,6 +312,9 @@ def handle_client(rpi_conn):
                                     left_speed = 30  # 기본 속도
                                     right_speed = 34  # 기본 속도
                                     print("중앙선 내에 있습니다. 직진 주행합니다.")
+                                    # 거리 비율 표시
+                                    cv2.putText(undist_frame, f"Distance Ratio: {normalized_distance:.2f}", (50, 100),
+                                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                                 else:
                                     # 왼쪽에서 멀어진 정도에 따라 회전 강도 조절
                                     if mid_center_x < roi_left_boundary:
@@ -307,13 +322,27 @@ def handle_client(rpi_conn):
                                         turn_intensity = (roi_left_boundary - mid_center_x) / roi_left_boundary
                                         left_speed = 30 - (turn_intensity * max_turn_speed + 5)
                                         right_speed = 34 + (turn_intensity * max_turn_speed + 5)
-                                        print(f"왼쪽으로 치우쳤습니다. 오른쪽으로 회전합니다. 거리 비율: {turn_intensity:.2f}")
+                                        print(f"왼쪽으로 치우쳤습니다. 오른쪽으로 회전합니다. 거리 비율: {turn_intensity:.2f} | ML: {left_speed}, MR: {right_speed}")
+                                        # 거리 비율 표시
+                                        cv2.putText(undist_frame, f"Distance Ratio: {turn_intensity:.2f}", (50, 100),
+                                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                                        # 화살표 그리기
+                                        start_point = (roi_left_boundary, mid_center_y)
+                                        end_point = (mid_center_x, mid_center_y)
+                                        cv2.arrowedLine(undist_frame, start_point, end_point, (0, 0, 255), 3, tipLength=0.5)
                                     else:
                                         # 오른쪽으로 치우쳤으므로 왼쪽으로 회전해야 함
                                         turn_intensity = (mid_center_x - roi_right_boundary) / (frame_width - roi_right_boundary)
                                         left_speed = 30 + (turn_intensity * max_turn_speed + 5)
-                                        right_speed = 34 - (turn_intensity * max_turn_speed+ 5)
-                                        print(f"오른쪽으로 치우쳤습니다. 왼쪽으로 회전합니다. 거리 비율: {turn_intensity:.2f}")
+                                        right_speed = 34 - (turn_intensity * max_turn_speed + 5)
+                                        print(f"오른쪽으로 치우쳤습니다. 왼쪽으로 회전합니다. 거리 비율: {turn_intensity:.2f} | ML: {left_speed}, MR: {right_speed}")
+                                        # 거리 비율 표시
+                                        cv2.putText(undist_frame, f"Distance Ratio: {turn_intensity:.2f}", (50, 100),
+                                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                                        # 화살표 그리기
+                                        start_point = (roi_right_boundary, mid_center_y)
+                                        end_point = (mid_center_x, mid_center_y)
+                                        cv2.arrowedLine(undist_frame, start_point, end_point, (0, 0, 255), 3, tipLength=0.5)
 
                                 # 속도 값이 유효한 범위 내에 있도록 제한
                                 max_speed = 80  # 최대 속도
@@ -348,11 +377,11 @@ def handle_client(rpi_conn):
                             state_start_time = time.time()
 
                     elif state == 'aruco_stopped':
-                        # 차량을 5초 동안 정지
+                        # 차량을 3초 동안 정지
                         left_speed = 0
                         right_speed = 0
                         elapsed = time.time() - state_start_time
-                        if elapsed >= 5.0:
+                        if elapsed >= 3.0:
                             # 3초 후 전진 시작
                             left_speed = 26
                             right_speed = 30
@@ -361,11 +390,11 @@ def handle_client(rpi_conn):
                             print("3초간 정지 후 3초간 전진을 시작합니다.")
 
                     elif state == 'moving_forward':
-                        # 차량을 5초 동안 전진
+                        # 차량을 3초 동안 전진
                         left_speed = 26
                         right_speed = 30
                         elapsed = time.time() - state_start_time
-                        if elapsed >= 5.0:
+                        if elapsed >= 3.0:
                             # 3초 후 차선 인식 모드로 전환
                             state = 'lane_following'
                             print("3초간 전진 후 차선 인식 모드로 전환합니다.")
@@ -387,25 +416,22 @@ def handle_client(rpi_conn):
 
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
-                else:
-                    print("Error: Unable to decode frame")
+                # 상태 데이터
+                elif header == b'CS':
+                    status_data = b''
+                    while len(status_data) < 1:
+                        packet = rpi_conn.recv(1 - len(status_data))
+                        if not packet:
+                            break
+                        status_data += packet
 
-            # 상태 데이터
-            elif header == b'CS':
-                status_data = b''
-                while len(status_data) < 1:
-                    packet = rpi_conn.recv(1 - len(status_data))
-                    if not packet:
-                        break
-                    status_data += packet
+                    rpi_conn.recv(1)  # '\n' 받기
 
-                rpi_conn.recv(1)  # '\n' 받기
-
-                status = int.from_bytes(status_data, byteorder="big")
-                if status == 1:
-                    print("status:", status)
-                else:
-                    print("status", status)
+                    status = int.from_bytes(status_data, byteorder="big")
+                    if status == 1:
+                        print("status:", status)
+                    else:
+                        print("status", status)
 
     except Exception as e:
         print(f"Error receiving or displaying frame: {e}")
