@@ -1,25 +1,17 @@
-# 딥러닝 프로젝트 2조. 사과 과수원 모니터링 로봇
-> ***DeepLearning Project Team 2 Repository: Orchard Monitoring Robot for Pollination and Fruit Set Yield of Apple Flowers***
+# 딥러닝 프로젝트 2조. 사과 과수원 모니터링 서비스
+> ***DeepLearning Project Team 2 Repository: Orchard Monitoring Service for Pollination and Fruit Set Yield of Apple Flowers***
 
 ## 🏁 개요
 
-### 📌 주제 소개
-- 사과나무의 인공수분, 착과량 모니터링 로봇
-
-<br>
-
 ### 🗓️ 프로젝트 기간
-- 8월 29일 - 9월 25일
+- 9월 9일 - 9월 25일
 
-<br>
+### 💡 선정 배경 및 프로젝트 개요 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://github.com/user-attachments/assets/47b99d2d-8f81-41ab-99a5-99b11ad04f2b"  width="600" height="300"/>
 
-### 💡 주제 선정 배경
-(1) 농업 고령화
-
-(2) 노동 집약적 산업
-
-
-<br>
+- 노동집약적 산업인 농업 분야에서 고령화가 진행되고 있고 이로인해서 로봇을 이용한 자동화 시스템의 필요성이 커지고 있습니다.
+- 그래서 과수원에서 기르는 작물들의 관리를 효율적이고 체계적으로 하기위해 딥러닝을 이용하여 모니터링 할 수 있는 시스템을 구축하고자 하였습니다.
+- 그 중 사과나무의 인공수분, 착과량 모니터링 서비스에 집중하였고 주요 핵심기능으로는 과수원 주행 모니터링, 사과 꽃 상태인지, 모니터링 통계기능 등이 있습니다.
 
 ### 🛠️ 기술 스택 
 |분류|기술|
@@ -30,8 +22,6 @@
 |DBMS|![js](https://img.shields.io/badge/MySQL-00000F?style=for-the-badge&logo=mysql&logoColor=white)|
 |하드웨어| <img src="https://img.shields.io/badge/Raspberry%20Pi-A22846?style=for-the-badge&logo=Raspberry%20Pi&logoColor=white"> ![Arduino](https://img.shields.io/badge/-Arduino-00979D?style=for-the-badge&logo=Arduino&logoColor=white)|
 |협업| ![js](https://img.shields.io/badge/GIT-E44C30?style=for-the-badge&logo=git&logoColor=white) ![js](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white) ![js](https://img.shields.io/badge/confluence-%23172BF4.svg?style=for-the-badge&logo=confluence&logoColor=white) ![js](https://img.shields.io/badge/Jira-0052CC?style=for-the-badge&logo=Jira&logoColor=white) ![js](https://img.shields.io/badge/Slack-4A154B?style=for-the-badge&logo=slack&logoColor=white)|
-
-<br>
 
 ### 🙌 팀원 소개
 
@@ -211,7 +201,7 @@
 - ?
   
 ### 5️⃣ Database 설계 
-#### 관계정의 개체(Entity)
+#### 관계정의 개체
 - 개화된 꽃, 인공수분된 꽃, 꽃봉오리 수 등 나무의 상태 정보 모니터링
 - 나무의 위치정보, 심은날짜, 인공수분 완료 여부
 - 장애물 정보
@@ -220,7 +210,7 @@
 - 로봇 대기장소 위치 정보
 - 로봇의 작업 스케줄 관리
 - ArUco 마커의 위치 및 연결대상 관리
-#### 설계의도
+#### 설계시 주안점
 1. 중복 배제
    - 나무 모니터링 작업 로그 작성시 Tree 테이블과 TreeCurrentStatus 테이블 생성을 통해 모니터링 데이터를 TreeCurrentStatus에 저장하여 중복하여 데이터가 저장되는것을 배제함 
 2. 효율적인 검색
