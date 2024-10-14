@@ -40,7 +40,9 @@
 
 ### 1️⃣ 시스템 설계
 - 시스템 구성도
-- ?
+![system architecture-Page-4 drawio](https://github.com/user-attachments/assets/aae24a56-f5a1-4021-a86f-9d8136022e9b)
+
+
 ### 2️⃣ 주요 시나리오
 - 상황 발생 시나리오 시퀀스 다이어그램
   ?
