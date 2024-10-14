@@ -198,7 +198,14 @@
 
 
 ### 4️⃣ GUI 설계
-- ?
+|GUI|Description|
+|-----|-----|
+|![GUI-page-1](https://github.com/user-attachments/assets/8c29e9ab-4f04-4223-a4d4-f7c0b1cb88c7)|Main Screen|
+|![GUI-page-2](https://github.com/user-attachments/assets/078977f8-a81f-475b-845f-e9533677f518)|Map Screen|
+|![GUI-page-3](https://github.com/user-attachments/assets/cbaf45a0-de6f-479f-af40-347fa4322338)|Statistics and Analytics|
+|![GUI-page-4](https://github.com/user-attachments/assets/1e572789-545b-4358-aadb-4c22c4fa7c94)|Time Schedule|
+
+
   
 ### 5️⃣ Database 설계 
 #### 관계정의 개체
@@ -230,10 +237,11 @@
 - 작업 대기 장소 복귀 기능
 ![Screenshot from 2024-10-04 17-54-44](https://github.com/user-attachments/assets/a2f844c1-23f8-46b2-9682-5b2ee74d7618)
 
-
 #### 구현 기술
 - HSV 색공간에 x, y 방향 경계 활용 및 급회전 구간에 대한 예외 처리 (인식 및 방향)를 통한 ***Line tracking 기술 구현***
 - 교차로 (갈래 길)에 대한 방향 설정 및 나무 번호 부여 순서에 따른 로봇 이동을 위한 ***Aruco Marker 기술 구현***
+![screencast-aruco](https://github.com/user-attachments/assets/06f9bade-4656-4125-b463-0bd6aa99e8aa)
+
 
   
 ### 2️⃣ 사과 나무 꽃 감지 및 인공수분 여부 파악
@@ -246,8 +254,9 @@
 
 ### 3️⃣ 도로 위 장애물 감지
 #### 주요 기능
+- 고라니 (피규어) 감지 시 정보 파악
 #### 구현 기술
-
+![image](https://github.com/user-attachments/assets/fc3d3f2a-a3b8-4c9f-8f2a-4ce196c7a61c)
 
 ### 4️⃣ 인공수분 모니터링
 #### 주요 기능
