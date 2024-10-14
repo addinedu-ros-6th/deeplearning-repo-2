@@ -200,11 +200,10 @@
 ### 4️⃣ GUI 설계
 |GUI|Description|
 |-----|-----|
-|![GUI-page-1](https://github.com/user-attachments/assets/8c29e9ab-4f04-4223-a4d4-f7c0b1cb88c7)|Main Screen|
-|![GUI-page-2](https://github.com/user-attachments/assets/078977f8-a81f-475b-845f-e9533677f518)|Map Screen|
-|![GUI-page-3](https://github.com/user-attachments/assets/cbaf45a0-de6f-479f-af40-347fa4322338)|Statistics and Analytics|
-|![GUI-page-4](https://github.com/user-attachments/assets/1e572789-545b-4358-aadb-4c22c4fa7c94)|Time Schedule|
-
+|Main Screen|Map Screen|
+|![GUI-page-1](https://github.com/user-attachments/assets/8c29e9ab-4f04-4223-a4d4-f7c0b1cb88c7)|![GUI-page-2](https://github.com/user-attachments/assets/078977f8-a81f-475b-845f-e9533677f518)|
+|Statistics and Analytics|Time Schedule|
+|![GUI-page-3](https://github.com/user-attachments/assets/cbaf45a0-de6f-479f-af40-347fa4322338)|![GUI-page-4](https://github.com/user-attachments/assets/1e572789-545b-4358-aadb-4c22c4fa7c94)|
 
   
 ### 5️⃣ Database 설계 
@@ -250,21 +249,24 @@
 #### 주요 기능
 - 사과 꽃 상태 인식 기능 : 꽃봉우리 혹은 개화한 꽃으로 구분
 - 인공수분 완료 여부 체크 기능
-![Screenshot from 2024-10-04 17-58-59](https://github.com/user-attachments/assets/05c079cb-0ed0-46a9-af66-c88930a811f0)
 
 #### 구현 기술
+- 사과꽃 데이터셋에 대한 YOLO v8 모델 학습
+![Screenshot from 2024-10-04 17-58-59](https://github.com/user-attachments/assets/05c079cb-0ed0-46a9-af66-c88930a811f0)
+
+- 실시간 사과꽃 탐지 및 추적
+
+- Aruco Marker를 통한 사과꽃 중복 객체 제거 및 좌표 추정
+
 
 ### 3️⃣ 도로 위 장애물 감지
 #### 주요 기능
 - 고라니 (피규어) 감지 시 정보 파악
+
+
 #### 구현 기술
+- 고라니 elk 데이터셋에 대한 YOLO v8 모델 학습
 <img src="https://github.com/user-attachments/assets/fc3d3f2a-a3b8-4c9f-8f2a-4ce196c7a61c"  width="400" height="300"/>
-
-### 4️⃣ 인공수분 모니터링
-#### 주요 기능
-#### 구현 기술
-
-
 
 
 
