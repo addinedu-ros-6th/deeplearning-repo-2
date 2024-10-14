@@ -54,7 +54,7 @@
 
 #### 1) Communication Protocol List
 
-<details close>
+<details open>
 
 |Transmitter|Receiver|Communication Protocol|
 |-----|-----|-----|
@@ -71,7 +71,7 @@
 
 #### 2) Command List
 
-<details close>
+<details open>
 
 <table>
   <thead>
@@ -129,7 +129,7 @@
 
 #### 3) Packet Structure
 
-<details close>
+<details open>
 
 <table>
     <thead>
@@ -224,7 +224,7 @@
 ### 5️⃣ Database 설계 
 
 #### 1) 관계정의 개체
-<details close>
+<details open>
   
 - 개화된 꽃, 인공수분된 꽃, 꽃봉오리 수 등 나무의 상태 정보 모니터링
 - 나무의 위치정보, 심은날짜, 인공수분 완료 여부
@@ -238,7 +238,7 @@
 
 #### 2) 설계 주안점
 
-<details close>
+<details open>
 
 1. 중복 배제
    - 나무 모니터링 작업 로그 작성시 Tree 테이블과 TreeCurrentStatus 테이블 생성을 통해 모니터링 데이터를 TreeCurrentStatus에 저장하여 데이터가 중복저장 되는것을 배제함 
