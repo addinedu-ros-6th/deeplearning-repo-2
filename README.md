@@ -276,6 +276,15 @@
 - 인공수분 완료 여부 체크 기능
 
 #### 구현 기술
+- 수집한 사과 꽃에 openCV로 인공수분 처리 진행
+  1. 데이터 셋에서 라벨링 데이터와 사진을 불러온다
+  2. 라벨링 데이터에서 center 라벨링 좌표를 가져와 사진에 인공수분 처리를 한다.
+  3. 꽃 센터 지점에 맞는 꽃의 라벨링 데이터를 찾아서 pollination class로 변환하여 저장한다.
+  
+  |처리 전| 처리 후|
+  |-----|-----|
+  |![apple_flower_983_jpg rf b1a6b2ef3f5c50d33bb100ef595ae4b9](https://github.com/user-attachments/assets/98c98846-f5a1-4539-842d-540c50a6c224)|![pollinated_apple_flower_983_jpg rf 14850a7d56cbb735c780465a6b2a87bb](https://github.com/user-attachments/assets/ac5dca16-ac71-42c8-b7ba-35b5968d7155)|
+
 - 사과꽃 데이터셋에 대한 YOLO v8 모델 학습
 ![Screenshot from 2024-10-04 17-58-59](https://github.com/user-attachments/assets/05c079cb-0ed0-46a9-af66-c88930a811f0)
 
