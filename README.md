@@ -283,7 +283,7 @@
   
   |처리 전| 처리 후|
   |-----|-----|
-  |![apple_flower_983_jpg rf b1a6b2ef3f5c50d33bb100ef595ae4b9](https://github.com/user-attachments/assets/98c98846-f5a1-4539-842d-540c50a6c224)|![pollinated_apple_flower_983_jpg rf 14850a7d56cbb735c780465a6b2a87bb](https://github.com/user-attachments/assets/ac5dca16-ac71-42c8-b7ba-35b5968d7155)|
+  |<img src="https://github.com/user-attachments/assets/98c98846-f5a1-4539-842d-540c50a6c224" width="347.5" height="521.6"/>|<img src="https://github.com/user-attachments/assets/ac5dca16-ac71-42c8-b7ba-35b5968d7155" width="347.5" height="521.6"/>|
 
 - 사과꽃 데이터셋에 대한 YOLO v8 모델 학습
 ![Screenshot from 2024-10-04 17-58-59](https://github.com/user-attachments/assets/05c079cb-0ed0-46a9-af66-c88930a811f0)
