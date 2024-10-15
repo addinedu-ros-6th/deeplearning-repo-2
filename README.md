@@ -36,6 +36,11 @@
 
 <br>
 
+
+## 시스템 요구사항
+### 기능 리스트
+
+
 ## ⚙️ 시스템 아키텍처
 
 ### 1️⃣ 시스템 설계
@@ -44,12 +49,18 @@
 
 
 ### 2️⃣ 주요 시나리오
-- 상황 발생 시나리오 시퀀스 다이어그램
-  ?
-- 카메라 수동 조작 시나리오 시퀀스 다이어그램 
-?
-- 상황 종료 시나리오 시퀀스 다이어그램
-?
+- 도로 주행 (순찰) 시나리오
+
+![241014_road_driving_scenarios drawio](https://github.com/user-attachments/assets/146b8ede-ca33-4b58-be60-54e4902a3b0a)
+
+- 인공수분 작업 및 사과(꽃) 상태 모니터링 시나리오
+
+![241014_pollination_scenarios drawio](https://github.com/user-attachments/assets/24e601d5-3c7c-4bdd-b475-b0feb84a9c95)
+
+- 도로 주행 중 장애물 감지 시나리오
+  
+![240920_obstacle_driving_scenario drawio](https://github.com/user-attachments/assets/21a49183-9f1a-459c-bae1-adb20302cebb)
+
 
 ### 3️⃣ 통신 프로토콜 정의
 
@@ -73,7 +84,7 @@
 
 #### 2) Command List
 
-<details open>
+<details close>
 
 <table>
   <thead>
@@ -131,7 +142,7 @@
 
 #### 3) Packet Structure
 
-<details open>
+<details close>
 
 <table>
     <thead>
@@ -214,6 +225,7 @@
 
 </details>
 
+
 ### 4️⃣ GUI 설계
 |GUI|Description|
 |-----|-----|
@@ -222,7 +234,8 @@
 |Statistics and Analytics|Time Schedule|
 |![GUI-page-3](https://github.com/user-attachments/assets/cbaf45a0-de6f-479f-af40-347fa4322338)|![GUI-page-4](https://github.com/user-attachments/assets/1e572789-545b-4358-aadb-4c22c4fa7c94)|
 
-  
+
+
 ### 5️⃣ Database 설계 
 
 #### 1) 관계정의 개체
@@ -240,7 +253,7 @@
 
 #### 2) 설계 주안점
 
-<details open>
+<details close>
 
 1. 중복 배제
    - 나무 모니터링 작업 로그 작성시 Tree 테이블과 TreeCurrentStatus 테이블 생성을 통해 모니터링 데이터를 TreeCurrentStatus에 저장하여 데이터가 중복저장 되는것을 배제함 
@@ -249,62 +262,71 @@
 3. 동적 할당
    - 로봇, 나무 수의 증가 등의 시스템 확장시 동적으로 대기장소(station)와 나무에 ArUco 마커가 할당 될 수 있도록 TreeAruco, RobotStationAssignment 테이블을 생성함
   
-![DB_schema-Page-1 drawio](https://github.com/user-attachments/assets/298cc87e-9e59-489e-a149-0baf39a65793)
-
 </details>
+
+![DB_schema-Page-1 drawio](https://github.com/user-attachments/assets/298cc87e-9e59-489e-a149-0baf39a65793)
 
 <br>
 
-## 🔗 기능 및 기술 구현
+## 🔗 기능 구현
 
-### 1️⃣ 과수원 및 인공수분 모니터링을 위한 도로 주행
-#### 주요 기능
-- 꽃 상태 체크를 위한 순찰 기능
-- 작업 대기 장소 복귀 기능
-
-#### 구현 기술
-- HSV 색공간에 x, y 방향 경계 활용 및 급회전 구간에 대한 예외 처리 (인식 및 방향)를 통한 ***Line tracking 기술 구현***
+### 1️⃣ 과수원 모니터링(순찰)을 위한 도로 주행
+>#### 주요 기능
+>- 꽃 상태 체크를 위한 순찰 기능
+>- 작업 대기 장소 복귀 기능
+  
+#### 🍎 차선 인식을 통한 라인 트래킹
+- HSV 색공간에 x, y 방향 경계를 통한 차선 중심값 추출
+- 급회전 구간에 대한 예외 처리 (인식 및 방향)
 
   ![Screenshot from 2024-10-04 17-54-44](https://github.com/user-attachments/assets/a2f844c1-23f8-46b2-9682-5b2ee74d7618)
-- 교차로 (갈래 길)에 대한 방향 설정 및 나무 번호 부여 순서에 따른 로봇 이동을 위한 ***Aruco Marker 기술 구현***
-  
+
+#### 🍎 로봇 위치 추정 및 조정을 위한 아르코 마커
+- 교차로 및 갈래 길에 대한 방향 설정 (직진, 좌회전)을 위한 ***Aruco Marker***
+- 나무 번호 부여 순서에 따른 로봇 이동을 위한 ***Aruco Marker***
+- 로봇 복귀 시 제자리 회전 및 주차를 위한 ***Aruco Marker***
+
   <img src="https://github.com/user-attachments/assets/06f9bade-4656-4125-b463-0bd6aa99e8aa"  width="500" height="350"/>
 
+#### 📹 시연 영상
+- 과수원 한바퀴 잘 도는 영상!!!!!!!!!!!!!
 
-  
-### 2️⃣ 사과 나무 꽃 감지 및 인공수분 여부 파악
-#### 주요 기능
-- 사과 꽃 상태 인식 기능 : 꽃봉우리 혹은 개화한 꽃으로 구분
-- 인공수분 완료 여부 체크 기능
+<br>
 
-#### 구현 기술
-- 수집한 사과 꽃에 openCV로 인공수분 처리 진행
+### 2️⃣ 나무 꽃 상태 확인 및 수분 여부 파악
+>#### 주요 기능
+>- 사과 꽃 상태 인식 기능 (꽃봉우리 혹은 개화한 꽃으로 구분)
+>- 인공수분 완료 여부 체크 기능
+
+#### 🍎 인공 수분 데이터 생성 (전처리) 과정
+- 웹크롤링해온 사과 꽃에 openCV로 인공수분 처리 진행
   1. 데이터 셋에서 라벨링 데이터와 사진을 불러온다
   2. 라벨링 데이터에서 center 라벨링 좌표를 가져와 사진에 인공수분 처리를 한다.
   3. 꽃 센터 지점에 맞는 꽃의 라벨링 데이터를 찾아서 pollination class로 변환하여 저장한다.
   
-  |처리 전| 처리 후|
+  |수분 처리 전|수분 처리 후|
   |-----|-----|
   |<img src="https://github.com/user-attachments/assets/98c98846-f5a1-4539-842d-540c50a6c224" width="278" height="417.3"/>|<img src="https://github.com/user-attachments/assets/ac5dca16-ac71-42c8-b7ba-35b5968d7155" width="278" height="417.3"/>|
 
-- 사과꽃 데이터셋에 대한 YOLO v8 모델 학습
+#### 🍎 사과꽃 데이터셋에 대한 YOLO v8 모델 학습
 ![Screenshot from 2024-10-04 17-58-59](https://github.com/user-attachments/assets/05c079cb-0ed0-46a9-af66-c88930a811f0)
 
+#### 🍎 사과꽃 중복 객체 제거
 - 실시간 사과꽃 탐지 및 추적
-
 - Aruco Marker를 통한 사과꽃 중복 객체 제거 및 좌표 추정
 
+#### 📹 시연 영상
+- 인공수분된 꽃 + 안된 꽃 + 꽃봉우리 조화 잘 분류하는 영상!!!!!!!!
+- 중복 객체 제거 영상!!!!!!
+
+<br>
 
 ### 3️⃣ 도로 위 장애물 감지
-#### 주요 기능
-- 고라니 (피규어) 감지 시 정보 파악
+>#### 주요 기능
+>- 고라니 (피규어) 감지 시 정보 파악
 
-
-#### 구현 기술
-- 고라니 elk 데이터셋에 대한 YOLO v8 모델 학습
+#### 고라니 elk 데이터셋에 대한 YOLO v8 모델 학습
 <img src="https://github.com/user-attachments/assets/fc3d3f2a-a3b8-4c9f-8f2a-4ce196c7a61c"  width="400" height="300"/>
 
+<br>
 
-
-## 시현 영상
-- ?
