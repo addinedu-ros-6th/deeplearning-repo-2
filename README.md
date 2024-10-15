@@ -1,4 +1,4 @@
-# 딥러닝 프로젝트 2조. 사과 과수원 모니터링 서비스
+# 사과 과수원 모니터링 서비스
 > ***DeepLearning Project Team 2 Repository: Orchard Monitoring Service for Pollination and Fruit Set Yield of Apple Flowers***
 
 ## 🏁 개요
