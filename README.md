@@ -289,7 +289,9 @@
   <img src="https://github.com/user-attachments/assets/06f9bade-4656-4125-b463-0bd6aa99e8aa"  width="500" height="350"/>
 
 #### 📹 시연 영상
-- 과수원 한바퀴 잘 도는 영상!!!!!!!!!!!!!
+- 과수원 한바퀴 도는 영상
+
+[<img src="https://github.com/user-attachments/assets/001099e6-6484-43fe-9923-0f2f97f9f006" width="640" height="400">](https://drive.google.com/file/d/1od8quoEXyFX7GNTdahtvhSPV3hS91I-T/view?usp=sharing)
 
 <br>
 
