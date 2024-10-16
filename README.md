@@ -278,37 +278,33 @@
 #### 🍎 차선 인식을 통한 Line tracking
 - HSV 색공간 & x, y 방향의 경계 & ROI를 활용한 양쪽 차선 인식(급회전 포함) 및 양쪽 차선의 무게중심 너비 중앙값을 기준으로 한 주행 구현
 
-  <img src="https://github.com/user-attachments/assets/a3c168ea-e748-4bd6-b7b4-afb4e6821da9" height="300" width="600"/>
+<img src="https://github.com/user-attachments/assets/a3c168ea-e748-4bd6-b7b4-afb4e6821da9" height="300" width="600"/>
+
 
 #### 🍎 로봇 위치 추정 및 조정을 위한 Aruco Marker
-- 나무 번호 부여 순서에 따른 사거리 및 T자 교차로 처리
+##### - 나무 번호 부여 순서에 따른 사거리 및 T자 교차로 처리
 
-(1) 사거리: 첫 번째 만남
+<details open>
+<summary>사거리</summary>
 
-<img src="https://github.com/user-attachments/assets/5d53bd79-1457-46aa-bb66-16a63cecf2cd" height="300" width="400"/>
-
-
-(2) 사거리: 두 번째 만남
-
-<img src="https://github.com/user-attachments/assets/f81e5df5-466a-4c89-a9b6-2b26f2397989" height="300" width="400"/>
+| 사거리: 첫 번째 만남 | 사거리: 두 번째 만남 | 사거리: 세 번째 만남 |
+| --- | --- | --- |
+| <img src="https://github.com/user-attachments/assets/5d53bd79-1457-46aa-bb66-16a63cecf2cd" height="300" width="400"/> | <img src="https://github.com/user-attachments/assets/f81e5df5-466a-4c89-a9b6-2b26f2397989" height="300" width="400"/> | <img src="https://github.com/user-attachments/assets/78d950d6-0339-4d4d-9a3d-9b6b25202b5c" height="300" width="400"/> |
 
 
-(3) 사거리: 세 번째 만남
+</details>
 
-<img src="https://github.com/user-attachments/assets/78d950d6-0339-4d4d-9a3d-9b6b25202b5c" height="300" width="400"/>
+<details open>
+<summary>T자 교차로</summary>
 
+| T자 교차로: 첫 번째 만남 | T자 교차로: 두 번째 만남 |
+| --- | --- |
+|<img src="https://github.com/user-attachments/assets/bedcbfd8-f649-4c94-a6ee-90eeb6937476" height="300" width="400"/>|<img src="https://github.com/user-attachments/assets/9047465d-3b7b-4463-a6be-234fd96a2f8c" height="300" width="400"/>|
 
-(4) T자 교차로: 첫 번째 만남
-
-<img src="https://github.com/user-attachments/assets/bedcbfd8-f649-4c94-a6ee-90eeb6937476" height="300" width="400"/>
-
-
-(5) T자 교차로: 두 번째 만남
-
-<img src="https://github.com/user-attachments/assets/9047465d-3b7b-4463-a6be-234fd96a2f8c" height="300" width="400"/>
+</details>
 
 
-- 로봇 복귀 시 대기 장소에서의 주차
+##### - 로봇 복귀 시 대기 장소에서의 주차
 
 <img src="https://github.com/user-attachments/assets/05e218a5-a928-4d99-a463-3c286cad1975" height="300" width="400"/>
 
