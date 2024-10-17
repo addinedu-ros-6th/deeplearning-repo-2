@@ -21,7 +21,7 @@
 |사용 기술| <img src="https://img.shields.io/badge/OpenCV-5C3EE8?style=for-the-badge&logo=OpenCV"> <img src="https://img.shields.io/badge/PyQt5-21C25E?style=for-the-badge&logo=quicktype"> |
 |DBMS|![js](https://img.shields.io/badge/MySQL-00000F?style=for-the-badge&logo=mysql&logoColor=white)|
 |하드웨어| <img src="https://img.shields.io/badge/Raspberry%20Pi-A22846?style=for-the-badge&logo=Raspberry%20Pi&logoColor=white"> ![Arduino](https://img.shields.io/badge/-Arduino-00979D?style=for-the-badge&logo=Arduino&logoColor=white)|
-|협업| ![js](https://img.shields.io/badge/GIT-E44C30?style=for-the-badge&logo=git&logoColor=white) ![js](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white) ![js](https://img.shields.io/badge/confluence-%23172BF4.svg?style=for-the-badge&logo=confluence&logoColor=white) ![js](https://img.shields.io/badge/Jira-0052CC?style=for-the-badge&logo=Jira&logoColor=white) ![js](https://img.shields.io/badge/Slack-4A154B?style=for-the-badge&logo=slack&logoColor=white)|
+|협업| ![js](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white) ![js](https://img.shields.io/badge/confluence-%23172BF4.svg?style=for-the-badge&logo=confluence&logoColor=white) ![js](https://img.shields.io/badge/Jira-0052CC?style=for-the-badge&logo=Jira&logoColor=white) ![js](https://img.shields.io/badge/Slack-4A154B?style=for-the-badge&logo=slack&logoColor=white)|
 
 ### 🙌 팀원 소개
 
@@ -39,6 +39,16 @@
 
 ## 시스템 요구사항
 ### 기능 리스트
+|Function|Description|
+|----|----|
+|꽃 상태 체크를 위한 과수원 순찰 기능|- 검은 도로에서 하얀 실선을 가이드 삼아 주행 <br> - 과수원 환경에서 (갈색 배경의 초록 실선)을 가이드 삼아 주행|
+|꽃 상태 인식 기능| - 인공 수분 가능 상태: 건강한 개화 상테 <br> - 인공수분 불가능 상태: 꽃봉오리, 병든 꽃, 시든 꽃, 저버린 꽃 <br> - 인공수분 완료 상태: 개화환 꽃에 꽃가루가 잘 뭍어있는 상태|
+|인공 수분 완료여부 체크| - 개화한 꽃의 인공 수분 여부를 인공 수분 후 꽃가루 색상 변화 감지를 통해 인공 수분 완료 여부 파악|
+|과수원 순찰 작업기간 관리기능| - 사용자 인터페이스 내에서 스캔 작업 제어 및 스캔 작업 시간 예약 가능|
+|작업 대기장소 복귀 기능| - 사과 꽃 상태 모니터링 작업 전 대기장소에서 대기 <br> - 인공수분 모니터링 작업 완료 후 대기장소로 복귀|
+|과수원 정보 및 상태 로그 표시 기능| -나무 번호, 나무 심은 일자, 나무 위치, 꽃 평균 개화 상태, 확인 날짜, 확인 시간을 표시|
+|인공 수분 진행 상태 모니터링 기능|개별|
+
 
 
 ## ⚙️ 시스템 아키텍처
