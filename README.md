@@ -1,1 +1,0 @@
-# pollination_robot_connection_test
