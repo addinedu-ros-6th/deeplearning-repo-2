@@ -1,0 +1,1201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1270</width>
+    <height>673</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <widget class="QFrame" name="bgApp_">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>1260</width>
+     <height>988</height>
+    </rect>
+   </property>
+   <layout class="QHBoxLayout" name="bgApp" stretch="0,0,0">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <item alignment="Qt::AlignTop">
+     <widget class="QFrame" name="leftMenuBg">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>60</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QFrame" name="topLogoInfo">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>60</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>60</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QFrame {
+	/*border: 1px solid #262525;*/
+	background-image: url(:/images/images/images/apple_flower.png);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: #D9D9D9;
+}</string>
+         </property>
+         <property name="lineWidth">
+          <number>1</number>
+         </property>
+        </widget>
+       </item>
+       <item alignment="Qt::AlignTop">
+        <widget class="QFrame" name="verticalFrame">
+         <property name="minimumSize">
+          <size>
+           <width>60</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>500</height>
+          </size>
+         </property>
+         <property name="layoutDirection">
+          <enum>Qt::RightToLeft</enum>
+         </property>
+         <layout class="QVBoxLayout" name="leftMenuFrame_2">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QFrame" name="Main_Dashboard">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>50</height>
+             </size>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_2">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QPushButton" name="Btn_Main_Dashboard">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>50</height>
+                </size>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QPushButton {
+	border:none;
+    background-image: url(:/icons/images/icons/cil-home.png);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: #86AB89;  /* 버튼 배경색을 흰색으로 설정 */
+    color: transparent;  /* 텍스트를 숨김 */
+}
+
+</string>
+               </property>
+               <property name="text">
+                <string>PushButton</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="Pollination_Monitor">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>50</height>
+             </size>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_7">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QPushButton" name="Btn_Pollination_Monitor">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>50</height>
+                </size>
+               </property>
+               <property name="layoutDirection">
+                <enum>Qt::LeftToRight</enum>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QPushButton {
+	border:none;
+    background-image: url(:/icons/images/icons/cil-map.png);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: #697565;  /* 버튼 배경색을 흰색으로 설정 */
+    color: transparent;  /* 텍스트를 숨김 */
+}
+                
+</string>
+               </property>
+               <property name="text">
+                <string>PushButton</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="Statistics">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>50</height>
+             </size>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_6">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QPushButton" name="Btn_Statistics">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>50</height>
+                </size>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QPushButton {
+	border:none;
+	background-image: url(:/icons/images/icons/cil-chart.png);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: #3C3D37;  /* 버튼 배경색을 흰색으로 설정 */
+    color: transparent;  /* 텍스트를 숨김 */
+}
+</string>
+               </property>
+               <property name="text">
+                <string>PushButton</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="Schedule_Setting">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>50</height>
+             </size>
+            </property>
+            <property name="cursor">
+             <cursorShape>ArrowCursor</cursorShape>
+            </property>
+            <property name="layoutDirection">
+             <enum>Qt::LeftToRight</enum>
+            </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QPushButton" name="Btn_Schedule_Setting">
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>50</height>
+                </size>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QPushButton {
+	border:none;
+	background-image: url(:/icons/images/icons/cil-alarm.png);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: #1E201E;  /* 버튼 배경색을 흰색으로 설정 */
+    color: transparent;  /* 텍스트를 숨김 */
+}</string>
+               </property>
+               <property name="text">
+                <string>PushButton</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="extraLeftBox">
+      <property name="maximumSize">
+       <size>
+        <width>0</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_5"/>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="contentBox">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>0</height>
+       </size>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QFrame" name="horizontalFrame">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>60</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>60</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QFrame {
+	/*border: 1px solid #262525;*/
+    background-color: #D9D9D9;
+}</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QFrame" name="leftBox_3">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>60</height>
+             </size>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="label">
+               <property name="minimumSize">
+                <size>
+                 <width>1048</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>1048</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QLabel {
+	border: 2px;
+    color: ; 
+    /*background-color: #B4B4B8;*/
+    font-size: 18px;            /* 텍스트 크기 */
+    font-family: &quot;Helvetica&quot;, Arial, sans-serif;  /* 여러 폰트 지정 */
+    font-weight: bold;           /* 굵게 */
+    /*font-style: italic;           이탤릭체 */
+}
+</string>
+               </property>
+               <property name="text">
+                <string>Applecare - Main Dashboard</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="rightButtons_3">
+            <property name="minimumSize">
+             <size>
+              <width>135</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>135</width>
+              <height>60</height>
+             </size>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QPushButton" name="minimizeAppBtn_3">
+               <property name="minimumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>28</width>
+                 <height>28</height>
+                </size>
+               </property>
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="toolTip">
+                <string>Minimize</string>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QPushButton {
+	border: none;
+    /*background-image: url(:/icons/images/icons/cil-windows-minimize.png);*/
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: #A8A8A8; 
+    color: transparent;  /* 텍스트를 숨김 */
+}
+
+</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="resources.qrc">
+                 <normaloff>:/icons/images/icons/icon_minimize.png</normaloff>:/icons/images/icons/icon_minimize.png</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>20</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="maximizeRestoreAppBtn_3">
+               <property name="minimumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>28</width>
+                 <height>28</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Segoe UI</family>
+                 <pointsize>10</pointsize>
+                 <weight>50</weight>
+                 <italic>false</italic>
+                 <bold>false</bold>
+                 <stylestrategy>PreferDefault</stylestrategy>
+                </font>
+               </property>
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="toolTip">
+                <string>Maximize</string>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QPushButton {
+	border: none;
+    /*background-image: url(:/icons/images/icons/icon_maximize.png);*/
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: #A8A8A8; 
+    color: transparent;  /* 텍스트를 숨김 */
+}
+
+</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="resources.qrc">
+                 <normaloff>:/icons/images/icons/icon_maximize.png</normaloff>:/icons/images/icons/icon_maximize.png</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>20</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="closeAppBtn_3">
+               <property name="minimumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>28</width>
+                 <height>28</height>
+                </size>
+               </property>
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="toolTip">
+                <string>Close</string>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QPushButton {
+	border: none;
+/*    background-image: url(:/icons/images/icons/icon_close.png);*/
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: #A8A8A8; 
+    color: transparent;  /* 텍스트를 숨김 */
+}
+
+</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="resources.qrc">
+                 <normaloff>:/icons/images/icons/icon_close.png</normaloff>:/icons/images/icons/icon_close.png</iconset>
+               </property>
+               <property name="iconSize">
+                <size>
+                 <width>20</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="contentBottom">
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_8">
+          <item>
+           <widget class="QFrame" name="content">
+            <property name="styleSheet">
+             <string notr="true"/>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_7">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QFrame" name="pagesContainer">
+               <layout class="QVBoxLayout" name="verticalLayout_9">
+                <property name="spacing">
+                 <number>0</number>
+                </property>
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QStackedWidget" name="stackedWidget">
+                  <property name="currentIndex">
+                   <number>3</number>
+                  </property>
+                  <widget class="QWidget" name="Main_Dashboard_2">
+                   <widget class="QPushButton" name="pushButton_4">
+                    <property name="geometry">
+                     <rect>
+                      <x>90</x>
+                      <y>10</y>
+                      <width>107</width>
+                      <height>30</height>
+                     </rect>
+                    </property>
+                    <property name="text">
+                     <string>main push</string>
+                    </property>
+                   </widget>
+                  </widget>
+                  <widget class="QWidget" name="Pollination_Monitor_2">
+                   <widget class="QPushButton" name="pushButton_3">
+                    <property name="geometry">
+                     <rect>
+                      <x>100</x>
+                      <y>60</y>
+                      <width>161</width>
+                      <height>30</height>
+                     </rect>
+                    </property>
+                    <property name="text">
+                     <string>pollination push</string>
+                    </property>
+                   </widget>
+                  </widget>
+                  <widget class="QWidget" name="Statistics_2">
+                   <widget class="QPushButton" name="pushButton_2">
+                    <property name="geometry">
+                     <rect>
+                      <x>90</x>
+                      <y>110</y>
+                      <width>171</width>
+                      <height>30</height>
+                     </rect>
+                    </property>
+                    <property name="text">
+                     <string>statistics_push</string>
+                    </property>
+                   </widget>
+                  </widget>
+                  <widget class="QWidget" name="Schedule_Setting_2">
+                   <widget class="QPushButton" name="pushButton_5">
+                    <property name="geometry">
+                     <rect>
+                      <x>140</x>
+                      <y>190</y>
+                      <width>107</width>
+                      <height>30</height>
+                     </rect>
+                    </property>
+                    <property name="text">
+                     <string>PushButton</string>
+                    </property>
+                   </widget>
+                   <widget class="QCheckBox" name="checkBox">
+                    <property name="geometry">
+                     <rect>
+                      <x>246</x>
+                      <y>112</y>
+                      <width>57</width>
+                      <height>50</height>
+                     </rect>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">QCheckBox::indicator{
+	width: 50px;
+	height: 50px;
+}
+
+QCheckBox::indicator:checked{
+	image:url(:/icons/images/icons/on-button.png)
+}
+
+QCheckBox::indicator:unchecked{
+	image:url(:/icons/images/icons/off-button.png)
+}
+
+
+
+</string>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                   <widget class="QLabel" name="label_2">
+                    <property name="geometry">
+                     <rect>
+                      <x>132</x>
+                      <y>42</y>
+                      <width>80</width>
+                      <height>26</height>
+                     </rect>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">QLabel {
+    /*background-color: #B4B4B8;*/
+    font-size: 18px;            /* 텍스트 크기 */
+    font-family: &quot;Helvetica&quot;, Arial, sans-serif;  /* 여러 폰트 지정 */
+    font-weight: bold;           /* 굵게 */
+    /*font-style: italic;           이탤릭체 */
+}
+</string>
+                    </property>
+                    <property name="text">
+                     <string>Schedul1</string>
+                    </property>
+                   </widget>
+                   <widget class="QLabel" name="label_4">
+                    <property name="geometry">
+                     <rect>
+                      <x>132</x>
+                      <y>112</y>
+                      <width>107</width>
+                      <height>21</height>
+                     </rect>
+                    </property>
+                    <property name="text">
+                     <string>Turn ON/OFF</string>
+                    </property>
+                   </widget>
+                   <widget class="QLabel" name="label_3">
+                    <property name="geometry">
+                     <rect>
+                      <x>132</x>
+                      <y>75</y>
+                      <width>75</width>
+                      <height>21</height>
+                     </rect>
+                    </property>
+                    <property name="layoutDirection">
+                     <enum>Qt::LeftToRight</enum>
+                    </property>
+                    <property name="text">
+                     <string>Set Time</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                    </property>
+                   </widget>
+                   <widget class="QTimeEdit" name="timeEdit">
+                    <property name="geometry">
+                     <rect>
+                      <x>246</x>
+                      <y>75</y>
+                      <width>100</width>
+                      <height>30</height>
+                     </rect>
+                    </property>
+                    <property name="minimumSize">
+                     <size>
+                      <width>100</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                    </property>
+                    <property name="dateTime">
+                     <datetime>
+                      <hour>8</hour>
+                      <minute>0</minute>
+                      <second>0</second>
+                      <year>2000</year>
+                      <month>1</month>
+                      <day>1</day>
+                     </datetime>
+                    </property>
+                    <property name="currentSection">
+                     <enum>QDateTimeEdit::HourSection</enum>
+                    </property>
+                    <property name="displayFormat">
+                     <string>hh:mm</string>
+                    </property>
+                   </widget>
+                   <widget class="QLabel" name="label_6">
+                    <property name="geometry">
+                     <rect>
+                      <x>448</x>
+                      <y>75</y>
+                      <width>75</width>
+                      <height>21</height>
+                     </rect>
+                    </property>
+                    <property name="text">
+                     <string>Set Time</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                    </property>
+                   </widget>
+                   <widget class="QLabel" name="label_5">
+                    <property name="geometry">
+                     <rect>
+                      <x>448</x>
+                      <y>112</y>
+                      <width>107</width>
+                      <height>21</height>
+                     </rect>
+                    </property>
+                    <property name="text">
+                     <string>Turn ON/OFF</string>
+                    </property>
+                   </widget>
+                   <widget class="QCheckBox" name="checkBox_2">
+                    <property name="geometry">
+                     <rect>
+                      <x>562</x>
+                      <y>112</y>
+                      <width>57</width>
+                      <height>50</height>
+                     </rect>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">QCheckBox::indicator{
+	width: 50px;
+	height: 50px;
+}
+
+QCheckBox::indicator:checked{
+	image:url(:/icons/images/icons/on-button.png)
+}
+
+QCheckBox::indicator:unchecked{
+	image:url(:/icons/images/icons/off-button.png)
+}
+
+
+
+</string>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                   <widget class="QLabel" name="label_7">
+                    <property name="geometry">
+                     <rect>
+                      <x>448</x>
+                      <y>42</y>
+                      <width>80</width>
+                      <height>26</height>
+                     </rect>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">QLabel {
+    /*background-color: #B4B4B8;*/
+    font-size: 18px;            /* 텍스트 크기 */
+    font-family: &quot;Helvetica&quot;, Arial, sans-serif;  /* 여러 폰트 지정 */
+    font-weight: bold;           /* 굵게 */
+    /*font-style: italic;           이탤릭체 */
+}
+</string>
+                    </property>
+                    <property name="text">
+                     <string>Schedul2</string>
+                    </property>
+                   </widget>
+                   <widget class="QTimeEdit" name="timeEdit_2">
+                    <property name="geometry">
+                     <rect>
+                      <x>562</x>
+                      <y>75</y>
+                      <width>100</width>
+                      <height>30</height>
+                     </rect>
+                    </property>
+                    <property name="minimumSize">
+                     <size>
+                      <width>100</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                    </property>
+                    <property name="dateTime">
+                     <datetime>
+                      <hour>12</hour>
+                      <minute>0</minute>
+                      <second>0</second>
+                      <year>2000</year>
+                      <month>1</month>
+                      <day>1</day>
+                     </datetime>
+                    </property>
+                    <property name="currentSection">
+                     <enum>QDateTimeEdit::HourSection</enum>
+                    </property>
+                    <property name="displayFormat">
+                     <string>hh:mm</string>
+                    </property>
+                    <property name="currentSectionIndex">
+                     <number>0</number>
+                    </property>
+                   </widget>
+                   <widget class="QTimeEdit" name="timeEdit_3">
+                    <property name="geometry">
+                     <rect>
+                      <x>878</x>
+                      <y>75</y>
+                      <width>100</width>
+                      <height>30</height>
+                     </rect>
+                    </property>
+                    <property name="minimumSize">
+                     <size>
+                      <width>100</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                    </property>
+                    <property name="dateTime">
+                     <datetime>
+                      <hour>16</hour>
+                      <minute>0</minute>
+                      <second>0</second>
+                      <year>2000</year>
+                      <month>1</month>
+                      <day>1</day>
+                     </datetime>
+                    </property>
+                    <property name="currentSection">
+                     <enum>QDateTimeEdit::HourSection</enum>
+                    </property>
+                    <property name="displayFormat">
+                     <string>hh:mm</string>
+                    </property>
+                   </widget>
+                   <widget class="QCheckBox" name="checkBox_3">
+                    <property name="geometry">
+                     <rect>
+                      <x>878</x>
+                      <y>112</y>
+                      <width>57</width>
+                      <height>50</height>
+                     </rect>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">QCheckBox::indicator{
+	width: 50px;
+	height: 50px;
+}
+
+QCheckBox::indicator:checked{
+	image:url(:/icons/images/icons/on-button.png)
+}
+
+QCheckBox::indicator:unchecked{
+	image:url(:/icons/images/icons/off-button.png)
+}
+
+
+
+</string>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                   <widget class="QLabel" name="label_10">
+                    <property name="geometry">
+                     <rect>
+                      <x>764</x>
+                      <y>112</y>
+                      <width>107</width>
+                      <height>21</height>
+                     </rect>
+                    </property>
+                    <property name="text">
+                     <string>Turn ON/OFF</string>
+                    </property>
+                   </widget>
+                   <widget class="QLabel" name="label_8">
+                    <property name="geometry">
+                     <rect>
+                      <x>764</x>
+                      <y>42</y>
+                      <width>80</width>
+                      <height>26</height>
+                     </rect>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">QLabel {
+    /*background-color: #B4B4B8;*/
+    font-size: 18px;            /* 텍스트 크기 */
+    font-family: &quot;Helvetica&quot;, Arial, sans-serif;  /* 여러 폰트 지정 */
+    font-weight: bold;           /* 굵게 */
+    /*font-style: italic;           이탤릭체 */
+}
+</string>
+                    </property>
+                    <property name="text">
+                     <string>Schedul3</string>
+                    </property>
+                   </widget>
+                   <widget class="QLabel" name="label_9">
+                    <property name="geometry">
+                     <rect>
+                      <x>764</x>
+                      <y>75</y>
+                      <width>75</width>
+                      <height>21</height>
+                     </rect>
+                    </property>
+                    <property name="text">
+                     <string>Set Time</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                    </property>
+                   </widget>
+                  </widget>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QFrame" name="extraRightBox">
+               <property name="maximumSize">
+                <size>
+                 <width>0</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_10">
+                <property name="spacing">
+                 <number>0</number>
+                </property>
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

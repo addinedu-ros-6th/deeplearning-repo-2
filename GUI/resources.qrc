@@ -1,0 +1,36 @@
+<RCC>
+  <qresource>
+    <file>icons/user-profile.png</file>
+    <file>icons/2map-final.png</file>
+    <file>icons/cli-chart-brown-16.png</file>
+    <file>icons/cli-home-brown-16.png</file>
+    <file>icons/cli-map-brown-16.png</file>
+    <file>icons/cli-settings-brown-16.png</file>
+    <file>icons/cli-chart-brown.png</file>
+    <file>icons/cli-home-brown.png</file>
+    <file>icons/cli-map-brown.png</file>
+    <file>icons/cli-settings-brown.png</file>
+    <file>icons/2dmap-ver1.png</file>
+    <file>icons/apple-1.png</file>
+    <file>icons/apple-3.png</file>
+    <file>icons/apple-tree-0.png</file>
+    <file>icons/apple-tree-1.png</file>
+    <file>icons/apple-tree-2.png</file>
+    <file>icons/apple-tree-3.png</file>
+    <file>icons/apple-tree-4.png</file>
+    <file>icons/apple-tree-5.png</file>
+    <file>icons/cil-chart.png</file>
+    <file>icons/cil-home.png</file>
+    <file>icons/cil-house.png</file>
+    <file>icons/cil-map.png</file>
+    <file>icons/cil-settings.png</file>
+    <file>icons/icon_settings.png</file>
+    <file>icons/menu-bar-1.png</file>
+    <file>icons/menu-bar-2.png</file>
+    <file>icons/menu-bar-3.png</file>
+    <file>icons/menu-bar-4.png</file>
+    <file>icons/menu-bar-5.png</file>
+    <file>icons/off-button.png</file>
+    <file>icons/on-button.png</file>
+  </qresource>
+</RCC>
